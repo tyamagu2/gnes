@@ -62,6 +62,8 @@ func (c *CPU) Run() {
 
 		if op == 0x18 {
 			c.clc()
+		} else if op == 0x2c {
+			c.bit(c.addrAbs())
 		} else if op == 0x38 {
 			c.sec()
 		} else if op == 0x58 {
@@ -132,6 +134,14 @@ func (c *CPU) ldx(addr uint16) {
 // Transfer X to Stack ptr
 func (c *CPU) txs() {
 	c.SP = c.X
+}
+
+// BIT
+func (c *CPU) bit(addr uint16) {
+	v := c.read8(addr)
+	c.Z = v&c.A != 0
+	c.V = v&(1<<6) != 0
+	c.N = v&(1<<7) != 0
 }
 
 // Flag (Processor Status) Instructions
