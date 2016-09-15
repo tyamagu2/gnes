@@ -7,7 +7,7 @@ type Memory struct {
 	Data [0x10000]byte
 }
 
-func (m *Memory) Read(addr uint16) byte {
+func (m *Memory) Read(addr uint16) uint8 {
 	if m.ROM.NumRPG == 1 && addr >= 0xc000 {
 		return m.ROM.RPG[addr-0xc000]
 	} else if addr >= 0x8000 {
