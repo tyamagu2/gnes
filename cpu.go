@@ -160,7 +160,7 @@ type CPU struct {
 	I   bool   // Interrupt Disable
 	D   bool   // Decimal Mode
 	B   bool   // Break Command
-	u   bool   // Unused
+	u   bool   // Always Set
 	V   bool   // Overflow Flag
 	N   bool   // Negative Flag
 }
@@ -214,7 +214,9 @@ func (c *CPU) Run() {
 			c.PC += 1
 		}
 
-		if op == 0x10 {
+		if op == 0x08 {
+			c.php()
+		} else if op == 0x10 {
 			c.bpl()
 		} else if op == 0x18 {
 			c.clc()
@@ -226,8 +228,16 @@ func (c *CPU) Run() {
 			c.sec()
 		} else if op == 0x4C || op == 0x6C {
 			c.jmp(addr)
+		} else if op == 0x50 {
+			c.bvc()
 		} else if op == 0x58 {
 			c.cli()
+		} else if op == 0x60 {
+			c.rts()
+		} else if op == 0x68 {
+			c.pla()
+		} else if op == 0x70 {
+			c.bvs()
 		} else if op == 0x78 {
 			c.sei()
 		} else if op == 0x86 {
@@ -367,11 +377,15 @@ func (c *CPU) addrRel(cond bool) uint16 {
 }
 
 // Stack operations
-func (c *CPU) stackPush(data []uint8) {
-	for _, d := range data {
-		c.Mem.Write(StackBase+uint16(c.SP), d)
-		c.SP -= 1
-	}
+
+func (c *CPU) stackPush(d uint8) {
+	c.Mem.Write(StackBase+uint16(c.SP), d)
+	c.SP--
+}
+
+func (c *CPU) stackPull() uint8 {
+	c.SP++
+	return c.read8(StackBase + uint16(c.SP))
 }
 
 // Jump
@@ -381,10 +395,10 @@ func (c *CPU) jmp(addr uint16) {
 
 // Jump to Subroutine
 func (c *CPU) jsr(addr uint16) {
-	ret := make([]uint8, 2)
-	ret[0] = uint8(c.PC & 0xff)
-	ret[1] = uint8(c.PC >> 8)
-	c.stackPush(ret)
+	// JSR pushes the address-1 of the next operation on to the stack.
+	ret := c.PC - 1
+	c.stackPush(uint8(ret >> 8))
+	c.stackPush(uint8(ret & 0xff))
 	c.PC = addr
 }
 
@@ -397,7 +411,6 @@ func (c *CPU) lda(addr uint16) {
 
 // Store Accumulator
 func (c *CPU) sta(addr uint16) {
-	fmt.Printf("STA: [0x%X] = 0x%X\n", addr, c.A)
 	c.Mem.Write(addr, c.A)
 }
 
@@ -411,7 +424,6 @@ func (c *CPU) ldx(addr uint16) {
 // BIT
 func (c *CPU) bit(addr uint16) {
 	v := c.read8(addr)
-	fmt.Printf("BIT: [0x%X] = 0x%X\n", addr, v)
 	c.Z = v&c.A == 0
 	c.V = v&(1<<6) != 0
 	c.N = v&(1<<7) != 0
@@ -422,6 +434,21 @@ func (c *CPU) bit(addr uint16) {
 // Branch on Plus
 func (c *CPU) bpl() {
 	c.PC = c.addrRel(!c.N)
+}
+
+// Branch on Minus
+func (c *CPU) bmi() {
+	c.PC = c.addrRel(c.N)
+}
+
+// Branch on Overflow Clear
+func (c *CPU) bvc() {
+	c.PC = c.addrRel(!c.V)
+}
+
+// Branch on Overflow Set
+func (c *CPU) bvs() {
+	c.PC = c.addrRel(c.V)
 }
 
 // Branch on Carry Clear
@@ -481,11 +508,31 @@ func (c *CPU) sed() {
 	c.D = true
 }
 
+// Return from Subroutine
+func (c *CPU) rts() {
+	lo := c.stackPull()
+	hi := c.stackPull()
+	addr := uint16(hi)<<8 | uint16(lo)
+	c.PC = addr + 1
+}
+
 // Stack Instructions
 
 // Transfer X to Stack ptr
 func (c *CPU) txs() {
 	c.SP = c.X
+}
+
+// Pull Accumulator
+func (c *CPU) pla() {
+	c.A = c.stackPull()
+}
+
+// Push Processor Status
+func (c *CPU) php() {
+	// http://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
+	// PHP sets B flag on push
+	c.stackPush(c.P() | flagB)
 }
 
 // Store X Register
