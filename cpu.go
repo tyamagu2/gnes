@@ -173,34 +173,78 @@ func (c *CPU) Run() {
 		op := c.read8(c.PC)
 		c.PC += 1
 
+		var addr uint16
+		mode := addrModes[op]
+
+		if mode == zpg {
+			// TODO
+			c.PC += 1
+		} else if mode == zpx {
+			// TODO
+			c.PC += 1
+		} else if mode == zpy {
+			// TODO
+			c.PC += 1
+		} else if mode == abs {
+			addr = c.addrAbs()
+			c.PC += 2
+		} else if mode == abx {
+			// TODO
+			c.PC += 2
+		} else if mode == aby {
+			// TODO
+			c.PC += 2
+		} else if mode == ind {
+			addr = c.addrInd()
+			c.PC += 2
+		} else if mode == imm {
+			addr = c.addrImm()
+			c.PC += 1
+		} else if mode == rel {
+			// TODO
+			//c.PC += 1
+		} else if mode == izx {
+			// TODO
+			c.PC += 1
+		} else if mode == izy {
+			// TODO
+			c.PC += 1
+		}
+
 		if op == 0x10 {
 			c.bpl()
 		} else if op == 0x18 {
 			c.clc()
+		} else if op == 0x20 {
+			c.jsr(addr)
 		} else if op == 0x2c {
-			c.bit(c.addrAbs())
+			c.bit(addr)
 		} else if op == 0x38 {
 			c.sec()
 		} else if op == 0x4c {
-			c.jmp(c.addrAbs())
+			c.jmp(addr)
 		} else if op == 0x58 {
 			c.cli()
 		} else if op == 0x78 {
 			c.sei()
+		} else if op == 0x86 {
+			c.stx(addr)
 		} else if op == 0x8d {
-			c.sta(c.addrAbs())
+			c.sta(addr)
 		} else if op == 0x9a {
 			c.txs()
 		} else if op == 0xa2 {
-			c.ldx(c.addrImm())
+			c.ldx(addr)
 		} else if op == 0xa9 {
-			c.lda(c.addrImm())
+			c.lda(addr)
 		} else if op == 0xad {
-			c.lda(c.addrAbs())
+			c.lda(addr)
 		} else if op == 0xb8 {
 			c.clv()
 		} else if op == 0xd8 {
 			c.cld()
+		} else if op == 0xea {
+			// NOP
 		} else if op == 0xf8 {
 			c.sed()
 		} else {
@@ -283,18 +327,15 @@ func (c *CPU) read16(addr uint16) uint16 {
 }
 
 func (c *CPU) addrImm() uint16 {
-	c.PC += 1
-	return c.PC - 1
+	return c.PC
 }
 
 func (c *CPU) addrAbs() uint16 {
-	c.PC += 2
-	return c.read16(c.PC - 2)
+	return c.read16(c.PC)
 }
 
 func (c *CPU) addrInd() uint16 {
 	ref := c.read16(c.PC)
-	c.PC += 2
 	return c.read16(ref)
 }
 
@@ -312,8 +353,25 @@ func (c *CPU) addrRel(cond bool) uint16 {
 	}
 }
 
+// Stack operations
+func (c *CPU) stackPush(data []uint8) {
+	for _, d := range data {
+		c.Mem.Write(StackBase+uint16(c.SP), d)
+		c.SP -= 1
+	}
+}
+
 // Jump
 func (c *CPU) jmp(addr uint16) {
+	c.PC = addr
+}
+
+// Jump to Subroutine
+func (c *CPU) jsr(addr uint16) {
+	ret := make([]uint8, 2)
+	ret[0] = uint8(c.PC & 0xff)
+	ret[1] = uint8(c.PC >> 8)
+	c.stackPush(ret)
 	c.PC = addr
 }
 
@@ -330,13 +388,6 @@ func (c *CPU) sta(addr uint16) {
 // Load X register
 func (c *CPU) ldx(addr uint16) {
 	c.X = c.read8(addr)
-}
-
-// Stack Instructions
-
-// Transfer X to Stack ptr
-func (c *CPU) txs() {
-	c.SP = c.X
 }
 
 // BIT
@@ -389,4 +440,16 @@ func (c *CPU) cld() {
 // Set Decimal
 func (c *CPU) sed() {
 	c.D = true
+}
+
+// Stack Instructions
+
+// Transfer X to Stack ptr
+func (c *CPU) txs() {
+	c.SP = c.X
+}
+
+// Store X Register
+func (c *CPU) stx(addr uint16) {
+	c.Mem.Write(addr, c.X)
 }
