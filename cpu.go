@@ -60,6 +60,9 @@ func (c *CPU) printState() {
 	for _, operand := range operands {
 		fmt.Printf(" %2X", operand)
 	}
+	if len(operands) == 0 {
+		fmt.Printf("\t")
+	}
 	fmt.Printf("\t%s", mnemonic[opcode])
 	if mode == zpg {
 		fmt.Printf(" $%2X", operands[0])
@@ -83,6 +86,9 @@ func (c *CPU) printState() {
 		fmt.Printf(" ($%2X,X)", operands[0])
 	} else if mode == izy {
 		fmt.Printf(" ($%2X),Y", operands[0])
+	}
+	if mode == zpg || mode == imp || mode == rel {
+		fmt.Printf("\t")
 	}
 	fmt.Printf("\tA:%2X X:%2X, Y:%2X P:%2X SP:%2X, CYC:TBD\n", c.A, c.X, c.Y, c.P(), c.SP)
 }
@@ -200,9 +206,6 @@ func (c *CPU) Run() {
 		} else if mode == imm {
 			addr = c.addrImm()
 			c.PC += 1
-		} else if mode == rel {
-			// TODO
-			//c.PC += 1
 		} else if mode == izx {
 			// TODO
 			c.PC += 1
@@ -231,6 +234,8 @@ func (c *CPU) Run() {
 			c.stx(addr)
 		} else if op == 0x8d {
 			c.sta(addr)
+		} else if op == 0x90 {
+			c.bcc()
 		} else if op == 0x9a {
 			c.txs()
 		} else if op == 0xa2 {
@@ -239,6 +244,8 @@ func (c *CPU) Run() {
 			c.lda(addr)
 		} else if op == 0xad {
 			c.lda(addr)
+		} else if op == 0xb0 {
+			c.bcs()
 		} else if op == 0xb8 {
 			c.clv()
 		} else if op == 0xd8 {
@@ -388,6 +395,8 @@ func (c *CPU) sta(addr uint16) {
 // Load X register
 func (c *CPU) ldx(addr uint16) {
 	c.X = c.read8(addr)
+	c.Z = c.X == 0
+	c.N = c.X < 0
 }
 
 // BIT
@@ -400,9 +409,19 @@ func (c *CPU) bit(addr uint16) {
 
 // Branch Instructions
 
-//Branch on Plus
+// Branch on Plus
 func (c *CPU) bpl() {
 	c.PC = c.addrRel(!c.N)
+}
+
+// Branch on Carry Clear
+func (c *CPU) bcc() {
+	c.PC = c.addrRel(!c.C)
+}
+
+// Branch on Carry Set
+func (c *CPU) bcs() {
+	c.PC = c.addrRel(c.C)
 }
 
 // Flag (Processor Status) Instructions
