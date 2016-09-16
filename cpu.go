@@ -12,6 +12,82 @@ const (
 	IRQVector   = 0xfffe
 )
 
+type AddrMode uint8
+
+// Addressing modes
+const (
+	_   AddrMode = iota
+	zpg          // zeroPage
+	zpx          // zeroPageX
+	zpy          // zeroPageY
+	abs          // absolute
+	abx          // absoluteX
+	aby          // absoluteY
+	ind          // indirect
+	imp          // implied
+	acc          // accumulator
+	imm          // immediate
+	rel          // relative
+	izx          // indexedIndirect
+	izy          // indirectIndexed
+)
+
+var addrModes = []AddrMode{
+	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
+	abs, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
+	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
+	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, ind, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
+	imm, izx, imm, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpy, zpy, imp, aby, imp, aby, abx, abx, aby, aby,
+	imm, izx, imm, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpy, zpy, imp, aby, imp, aby, abx, abx, aby, aby,
+	imm, izx, imm, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
+	imm, izx, imm, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
+}
+
+func (c *CPU) printState() {
+	opcode := c.read8(c.PC)
+	operands := c.Mem.readBytes(c.PC+1, numOperands[opcode])
+	mode := addrModes[opcode]
+
+	fmt.Printf("%4X %2X ", c.PC, opcode)
+	for _, operand := range operands {
+		fmt.Printf("%x ", operand)
+	}
+	fmt.Printf("%s ", mnemonic[opcode])
+	if mode == zpg {
+		fmt.Printf("$%2X ", operands[0])
+	} else if mode == zpx {
+		fmt.Printf("$%2X,X ", operands[0])
+	} else if mode == zpy {
+		fmt.Printf("$%2X,Y ", operands[0])
+	} else if mode == abs {
+		fmt.Printf("$%2X%2X ", operands[1], operands[0])
+	} else if mode == abx {
+		fmt.Printf("$%2X%2X,X ", operands[1], operands[0])
+	} else if mode == aby {
+		fmt.Printf("$%2X%2X,Y ", operands[1], operands[0])
+	} else if mode == ind {
+		fmt.Printf("($%2X%2X) ", operands[1], operands[0])
+	} else if mode == imm {
+		fmt.Printf("#$%2X ", operands[0])
+	} else if mode == rel {
+		fmt.Printf("*%2X ", int8(operands[0]))
+	} else if mode == izx {
+		fmt.Printf("($%2X,X) ", operands[0])
+	} else if mode == izy {
+		fmt.Printf("($%2X),Y ", operands[0])
+	}
+	fmt.Printf("A:%2X X:%2X, Y:%2X P:%2X SP:%2X, CYC:TBD\n", c.A, c.X, c.Y, c.P(), c.SP)
+}
+
+// http://www.oxyron.de/html/opcodes02.html
 var mnemonic = [256]string{
 	"BRK", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
 	"PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
@@ -90,30 +166,11 @@ func NewCPU(rom *ROM) *CPU {
 	return &cpu
 }
 
-func (c *CPU) Show() {
-	fmt.Println("---------")
-	fmt.Printf("PC: 0x%x\n", c.PC)
-	fmt.Printf("SP: 0x%x\n", c.SP)
-	fmt.Printf("A : 0x%x\n", c.A)
-	fmt.Printf("X : 0x%x\n", c.X)
-	fmt.Printf("Y : 0x%x\n", c.Y)
-	fmt.Printf("P : 0x%x\n", c.P())
-	fmt.Println("  C:", c.C)
-	fmt.Println("  Z:", c.Z)
-	fmt.Println("  I:", c.I)
-	fmt.Println("  D:", c.D)
-	fmt.Println("  B:", c.B)
-	fmt.Println("  _:", c.u)
-	fmt.Println("  V:", c.V)
-	fmt.Println("  N:", c.N)
-}
-
 func (c *CPU) Run() {
 	for {
-		c.Show()
+		c.printState()
 
 		op := c.read8(c.PC)
-		fmt.Printf("OP: 0x%x\n", op)
 		c.PC += 1
 
 		if op == 0x10 {
