@@ -56,35 +56,35 @@ func (c *CPU) printState() {
 	operands := c.Mem.readBytes(c.PC+1, numOperands[opcode])
 	mode := addrModes[opcode]
 
-	fmt.Printf("%4X %2X ", c.PC, opcode)
+	fmt.Printf("%4X %2X", c.PC, opcode)
 	for _, operand := range operands {
-		fmt.Printf("%x ", operand)
+		fmt.Printf(" %2X", operand)
 	}
-	fmt.Printf("%s ", mnemonic[opcode])
+	fmt.Printf("\t%s", mnemonic[opcode])
 	if mode == zpg {
-		fmt.Printf("$%2X ", operands[0])
+		fmt.Printf(" $%2X", operands[0])
 	} else if mode == zpx {
-		fmt.Printf("$%2X,X ", operands[0])
+		fmt.Printf(" $%2X,X", operands[0])
 	} else if mode == zpy {
-		fmt.Printf("$%2X,Y ", operands[0])
+		fmt.Printf(" $%2X,Y", operands[0])
 	} else if mode == abs {
-		fmt.Printf("$%2X%2X ", operands[1], operands[0])
+		fmt.Printf(" $%2X%2X", operands[1], operands[0])
 	} else if mode == abx {
-		fmt.Printf("$%2X%2X,X ", operands[1], operands[0])
+		fmt.Printf(" $%2X%2X,X", operands[1], operands[0])
 	} else if mode == aby {
-		fmt.Printf("$%2X%2X,Y ", operands[1], operands[0])
+		fmt.Printf(" $%2X%2X,Y", operands[1], operands[0])
 	} else if mode == ind {
-		fmt.Printf("($%2X%2X) ", operands[1], operands[0])
+		fmt.Printf(" ($%2X%2X)", operands[1], operands[0])
 	} else if mode == imm {
-		fmt.Printf("#$%2X ", operands[0])
+		fmt.Printf(" #$%2X", operands[0])
 	} else if mode == rel {
-		fmt.Printf("*%2X ", int8(operands[0]))
+		fmt.Printf(" *%2X", int8(operands[0]))
 	} else if mode == izx {
-		fmt.Printf("($%2X,X) ", operands[0])
+		fmt.Printf(" ($%2X,X)", operands[0])
 	} else if mode == izy {
-		fmt.Printf("($%2X),Y ", operands[0])
+		fmt.Printf(" ($%2X),Y", operands[0])
 	}
-	fmt.Printf("A:%2X X:%2X, Y:%2X P:%2X SP:%2X, CYC:TBD\n", c.A, c.X, c.Y, c.P(), c.SP)
+	fmt.Printf("\tA:%2X X:%2X, Y:%2X P:%2X SP:%2X, CYC:TBD\n", c.A, c.X, c.Y, c.P(), c.SP)
 }
 
 // http://www.oxyron.de/html/opcodes02.html
@@ -218,46 +218,58 @@ func (c *CPU) Reset() {
 	c.A = 0
 	c.X = 0
 	c.Y = 0
-	c.setPFlags(0x24)
+	c.setProcessorStatus(0x24)
 }
 
-func (c *CPU) setPFlags(flags uint8) {
-	c.C = flags&(1<<0) != 0
-	c.Z = flags&(1<<1) != 0
-	c.I = flags&(1<<2) != 0
-	c.D = flags&(1<<3) != 0
-	c.B = flags&(1<<4) != 0
-	c.u = flags&(1<<5) != 0
-	c.V = flags&(1<<6) != 0
-	c.N = flags&(1<<7) != 0
+// Processor status flags
+const (
+	flagC = 1 << iota
+	flagZ = 1 << iota
+	flagI = 1 << iota
+	flagD = 1 << iota
+	flagB = 1 << iota
+	flagU = 1 << iota
+	flagV = 1 << iota
+	flagN = 1 << iota
+)
+
+func (c *CPU) setProcessorStatus(flags uint8) {
+	c.C = flags&flagC != 0
+	c.Z = flags&flagZ != 0
+	c.I = flags&flagI != 0
+	c.D = flags&flagD != 0
+	c.B = flags&flagB != 0
+	c.u = flags&flagU != 0
+	c.V = flags&flagV != 0
+	c.N = flags&flagN != 0
 }
 
 func (c *CPU) P() uint8 {
 	var p uint8
 
 	if c.C {
-		p |= 1
+		p |= flagC
 	}
 	if c.Z {
-		p |= 1 << 1
+		p |= flagZ
 	}
 	if c.I {
-		p |= 1 << 1
+		p |= flagI
 	}
 	if c.D {
-		p |= 1 << 1
+		p |= flagD
 	}
 	if c.B {
-		p |= 1 << 1
+		p |= flagB
 	}
 	if c.u {
-		p |= 1 << 1
+		p |= flagU
 	}
 	if c.V {
-		p |= 1 << 1
+		p |= flagV
 	}
 	if c.N {
-		p |= 1 << 1
+		p |= flagN
 	}
 	return p
 }
@@ -302,7 +314,7 @@ func (c *CPU) addrRel(cond bool) uint16 {
 
 // Jump
 func (c *CPU) jmp(addr uint16) {
-	c.PC = c.read16(addr)
+	c.PC = addr
 }
 
 // Load Accumulator
