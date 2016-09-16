@@ -220,11 +220,11 @@ func (c *CPU) Run() {
 			c.clc()
 		} else if op == 0x20 {
 			c.jsr(addr)
-		} else if op == 0x2c {
+		} else if op == 0x2C {
 			c.bit(addr)
 		} else if op == 0x38 {
 			c.sec()
-		} else if op == 0x4c {
+		} else if op == 0x4C || op == 0x6C {
 			c.jmp(addr)
 		} else if op == 0x58 {
 			c.cli()
@@ -232,27 +232,29 @@ func (c *CPU) Run() {
 			c.sei()
 		} else if op == 0x86 {
 			c.stx(addr)
-		} else if op == 0x8d {
+		} else if op == 0x81 || op == 0x85 || op == 0x8D || op == 0x91 || op == 0x95 || op == 0x99 || op == 0x9D {
 			c.sta(addr)
 		} else if op == 0x90 {
 			c.bcc()
-		} else if op == 0x9a {
+		} else if op == 0x9A {
 			c.txs()
-		} else if op == 0xa2 {
+		} else if op == 0xA1 || op == 0xA5 || op == 0xA9 || op == 0xAD || op == 0xB1 || op == 0xB5 || op == 0xB9 || op == 0xBD {
+			c.lda(addr)
+		} else if op == 0xA2 || op == 0xA6 || op == 0xAE || op == 0xB6 || op == 0xBE {
 			c.ldx(addr)
-		} else if op == 0xa9 {
-			c.lda(addr)
-		} else if op == 0xad {
-			c.lda(addr)
-		} else if op == 0xb0 {
+		} else if op == 0xB0 {
 			c.bcs()
-		} else if op == 0xb8 {
+		} else if op == 0xB8 {
 			c.clv()
-		} else if op == 0xd8 {
+		} else if op == 0xD0 {
+			c.bne()
+		} else if op == 0xD8 {
 			c.cld()
-		} else if op == 0xea {
+		} else if op == 0xEA {
 			// NOP
-		} else if op == 0xf8 {
+		} else if op == 0xF0 {
+			c.beq()
+		} else if op == 0xF8 {
 			c.sed()
 		} else {
 			log.Fatalf("0x%x not supported yet.", op)
@@ -385,6 +387,8 @@ func (c *CPU) jsr(addr uint16) {
 // Load Accumulator
 func (c *CPU) lda(addr uint16) {
 	c.A = c.read8(addr)
+	c.Z = c.A == 0
+	c.N = c.A&0x80 != 0
 }
 
 // Store Accumulator
@@ -396,7 +400,7 @@ func (c *CPU) sta(addr uint16) {
 func (c *CPU) ldx(addr uint16) {
 	c.X = c.read8(addr)
 	c.Z = c.X == 0
-	c.N = c.X < 0
+	c.N = c.X&0x80 != 0
 }
 
 // BIT
@@ -422,6 +426,16 @@ func (c *CPU) bcc() {
 // Branch on Carry Set
 func (c *CPU) bcs() {
 	c.PC = c.addrRel(c.C)
+}
+
+// Branch on Equal
+func (c *CPU) beq() {
+	c.PC = c.addrRel(c.Z)
+}
+
+// Branch on Not Equal
+func (c *CPU) bne() {
+	c.PC = c.addrRel(!c.Z)
 }
 
 // Flag (Processor Status) Instructions
