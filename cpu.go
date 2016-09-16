@@ -183,22 +183,22 @@ func (c *CPU) Run() {
 		mode := addrModes[op]
 
 		if mode == zpg {
-			// TODO
+			addr = c.addrZpg()
 			c.PC += 1
 		} else if mode == zpx {
-			// TODO
+			log.Fatalf("Unsupported mode %v\n", mode)
 			c.PC += 1
 		} else if mode == zpy {
-			// TODO
+			log.Fatalf("Unsupported mode %v\n", mode)
 			c.PC += 1
 		} else if mode == abs {
 			addr = c.addrAbs()
 			c.PC += 2
 		} else if mode == abx {
-			// TODO
+			log.Fatalf("Unsupported mode %v\n", mode)
 			c.PC += 2
 		} else if mode == aby {
-			// TODO
+			log.Fatalf("Unsupported mode %v\n", mode)
 			c.PC += 2
 		} else if mode == ind {
 			addr = c.addrInd()
@@ -207,10 +207,10 @@ func (c *CPU) Run() {
 			addr = c.addrImm()
 			c.PC += 1
 		} else if mode == izx {
-			// TODO
+			log.Fatalf("Unsupported mode %v\n", mode)
 			c.PC += 1
 		} else if mode == izy {
-			// TODO
+			log.Fatalf("Unsupported mode %v\n", mode)
 			c.PC += 1
 		}
 
@@ -220,7 +220,7 @@ func (c *CPU) Run() {
 			c.clc()
 		} else if op == 0x20 {
 			c.jsr(addr)
-		} else if op == 0x2C {
+		} else if op == 0x24 || op == 0x2C {
 			c.bit(addr)
 		} else if op == 0x38 {
 			c.sec()
@@ -332,7 +332,11 @@ func (c *CPU) read8(addr uint16) uint8 {
 }
 
 func (c *CPU) read16(addr uint16) uint16 {
-	return uint16(c.Mem.Read(addr+1))<<8 | uint16(c.Mem.Read(addr))
+	return uint16(c.read8(addr+1))<<8 | uint16(c.read8(addr))
+}
+
+func (c *CPU) addrZpg() uint16 {
+	return uint16(c.read8(c.PC))
 }
 
 func (c *CPU) addrImm() uint16 {
@@ -350,7 +354,7 @@ func (c *CPU) addrInd() uint16 {
 
 func (c *CPU) addrRel(cond bool) uint16 {
 	if cond {
-		offset := uint16(c.Mem.Read(c.PC))
+		offset := uint16(c.read8(c.PC))
 		// treat offset as signed
 		if offset < 0x80 {
 			return c.PC + 1 + offset
@@ -393,6 +397,7 @@ func (c *CPU) lda(addr uint16) {
 
 // Store Accumulator
 func (c *CPU) sta(addr uint16) {
+	fmt.Printf("STA: [0x%X] = 0x%X\n", addr, c.A)
 	c.Mem.Write(addr, c.A)
 }
 
@@ -406,7 +411,8 @@ func (c *CPU) ldx(addr uint16) {
 // BIT
 func (c *CPU) bit(addr uint16) {
 	v := c.read8(addr)
-	c.Z = v&c.A != 0
+	fmt.Printf("BIT: [0x%X] = 0x%X\n", addr, v)
+	c.Z = v&c.A == 0
 	c.V = v&(1<<6) != 0
 	c.N = v&(1<<7) != 0
 }
