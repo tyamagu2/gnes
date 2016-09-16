@@ -222,6 +222,8 @@ func (c *CPU) Run() {
 			c.clc()
 		} else if op == 0x20 {
 			c.jsr(addr)
+		} else if op == 0x21 || op == 0x25 || op == 0x29 || op == 0x2D || op == 0x31 || op == 0x35 || op == 0x39 || op == 0x3D {
+			c.and(addr)
 		} else if op == 0x24 || op == 0x2C {
 			c.bit(addr)
 		} else if op == 0x38 {
@@ -376,6 +378,13 @@ func (c *CPU) addrRel(cond bool) uint16 {
 	}
 }
 
+// AND
+func (c *CPU) and(addr uint16) {
+	c.A &= c.read8(addr)
+	c.Z = c.A == 0
+	c.N = c.A&0x80 != 0
+}
+
 // Stack operations
 
 func (c *CPU) stackPush(d uint8) {
@@ -526,6 +535,8 @@ func (c *CPU) txs() {
 // Pull Accumulator
 func (c *CPU) pla() {
 	c.A = c.stackPull()
+	c.Z = c.A == 0
+	c.N = c.A&0x80 != 0
 }
 
 // Push Processor Status
