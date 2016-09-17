@@ -258,6 +258,8 @@ func (c *CPU) Run() {
 			c.bcs()
 		} else if op == 0xB8 {
 			c.clv()
+		} else if op == 0xC1 || op == 0xC5 || op == 0xC9 || op == 0xCD || op == 0xD1 || op == 0xD5 || op == 0xD9 || op == 0xDD {
+			c.cmp(addr)
 		} else if op == 0xD0 {
 			c.bne()
 		} else if op == 0xD8 {
@@ -383,6 +385,15 @@ func (c *CPU) and(addr uint16) {
 	c.A &= c.read8(addr)
 	c.Z = c.A == 0
 	c.N = c.A&0x80 != 0
+}
+
+// Compare accumulator
+func (c *CPU) cmp(addr uint16) {
+	v := c.read8(addr)
+	c.C = c.A >= v
+	w := c.A - v
+	c.Z = w == 0
+	c.N = w >= 0x80
 }
 
 // Stack operations
