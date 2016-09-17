@@ -384,7 +384,7 @@ func (c *CPU) addrRel(cond bool) uint16 {
 func (c *CPU) and(addr uint16) {
 	c.A &= c.read8(addr)
 	c.Z = c.A == 0
-	c.N = c.A&0x80 != 0
+	c.N = c.A >= 0x80
 }
 
 // Compare accumulator
@@ -426,7 +426,7 @@ func (c *CPU) jsr(addr uint16) {
 func (c *CPU) lda(addr uint16) {
 	c.A = c.read8(addr)
 	c.Z = c.A == 0
-	c.N = c.A&0x80 != 0
+	c.N = c.A >= 0x80
 }
 
 // Store Accumulator
