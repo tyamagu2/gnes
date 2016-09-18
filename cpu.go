@@ -159,8 +159,6 @@ type CPU struct {
 	Z   bool   // Zero Flag
 	I   bool   // Interrupt Disable
 	D   bool   // Decimal Mode
-	B   bool   // Break Command
-	u   bool   // Always Set
 	V   bool   // Overflow Flag
 	N   bool   // Negative Flag
 }
@@ -228,6 +226,8 @@ func (c *CPU) Run() {
 			c.bit(addr)
 		} else if op == 0x28 {
 			c.plp()
+		} else if op == 0x30 {
+			c.bmi()
 		} else if op == 0x38 {
 			c.sec()
 		} else if op == 0x48 {
@@ -309,14 +309,12 @@ func (c *CPU) setProcessorStatus(flags uint8) {
 	c.Z = flags&flagZ != 0
 	c.I = flags&flagI != 0
 	c.D = flags&flagD != 0
-	c.B = flags&flagB != 0
-	c.u = flags&flagU != 0
 	c.V = flags&flagV != 0
 	c.N = flags&flagN != 0
 }
 
 func (c *CPU) P() uint8 {
-	var p uint8
+	var p uint8 = flagU // always set U
 
 	if c.C {
 		p |= flagC
@@ -329,12 +327,6 @@ func (c *CPU) P() uint8 {
 	}
 	if c.D {
 		p |= flagD
-	}
-	if c.B {
-		p |= flagB
-	}
-	if c.u {
-		p |= flagU
 	}
 	if c.V {
 		p |= flagV
@@ -562,15 +554,13 @@ func (c *CPU) pla() {
 // Push Processor Status
 func (c *CPU) php() {
 	// http://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
-	// PHP sets B flag on push
+	// PHP sets P register value with B flag set
 	c.stackPush(c.P() | flagB)
 }
 
 // Pull Processor Status
 func (c *CPU) plp() {
-	// http://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
-	// PLP ignores B flag
-	c.setProcessorStatus(c.stackPull() & ^flagB)
+	c.setProcessorStatus(c.stackPull())
 }
 
 // Store X Register
