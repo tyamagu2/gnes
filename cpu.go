@@ -226,8 +226,12 @@ func (c *CPU) Run() {
 			c.and(addr)
 		} else if op == 0x24 || op == 0x2C {
 			c.bit(addr)
+		} else if op == 0x28 {
+			c.plp()
 		} else if op == 0x38 {
 			c.sec()
+		} else if op == 0x48 {
+			c.pha()
 		} else if op == 0x4C || op == 0x6C {
 			c.jmp(addr)
 		} else if op == 0x50 {
@@ -290,14 +294,14 @@ func (c *CPU) Reset() {
 
 // Processor status flags
 const (
-	flagC = 1 << iota
-	flagZ = 1 << iota
-	flagI = 1 << iota
-	flagD = 1 << iota
-	flagB = 1 << iota
-	flagU = 1 << iota
-	flagV = 1 << iota
-	flagN = 1 << iota
+	flagC uint8 = 1 << iota
+	flagZ uint8 = 1 << iota
+	flagI uint8 = 1 << iota
+	flagD uint8 = 1 << iota
+	flagB uint8 = 1 << iota
+	flagU uint8 = 1 << iota
+	flagV uint8 = 1 << iota
+	flagN uint8 = 1 << iota
 )
 
 func (c *CPU) setProcessorStatus(flags uint8) {
@@ -438,7 +442,7 @@ func (c *CPU) sta(addr uint16) {
 func (c *CPU) ldx(addr uint16) {
 	c.X = c.read8(addr)
 	c.Z = c.X == 0
-	c.N = c.X&0x80 != 0
+	c.N = c.X >= 0x80
 }
 
 // BIT
@@ -543,11 +547,16 @@ func (c *CPU) txs() {
 	c.SP = c.X
 }
 
+// Push Accumulator
+func (c *CPU) pha() {
+	c.stackPush(c.A)
+}
+
 // Pull Accumulator
 func (c *CPU) pla() {
 	c.A = c.stackPull()
 	c.Z = c.A == 0
-	c.N = c.A&0x80 != 0
+	c.N = c.A >= 0x80
 }
 
 // Push Processor Status
@@ -555,6 +564,13 @@ func (c *CPU) php() {
 	// http://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
 	// PHP sets B flag on push
 	c.stackPush(c.P() | flagB)
+}
+
+// Pull Processor Status
+func (c *CPU) plp() {
+	// http://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
+	// PLP ignores B flag
+	c.setProcessorStatus(c.stackPull() & ^flagB)
 }
 
 // Store X Register
