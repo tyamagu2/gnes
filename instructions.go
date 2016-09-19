@@ -157,6 +157,14 @@ func (c *CPU) ora(addr uint16) {
 	c.setZN(c.A)
 }
 
+// Regiser Instructions
+
+// Increment Y
+func (c *CPU) iny() {
+	c.Y++
+	c.setZN(c.Y)
+}
+
 // Set Intrrupt
 func (c *CPU) sei() {
 	c.I = true
@@ -234,6 +242,11 @@ func (c *CPU) txs() {
 // Store X Register
 func (c *CPU) stx(addr uint16) {
 	c.Mem.Write(addr, c.X)
+}
+
+// Store Y Register
+func (c *CPU) sty(addr uint16) {
+	c.Mem.Write(addr, c.Y)
 }
 
 // Helpers

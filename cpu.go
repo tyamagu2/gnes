@@ -256,6 +256,8 @@ func (c *CPU) Run() {
 			c.stx(addr)
 		} else if op == 0x81 || op == 0x85 || op == 0x8D || op == 0x91 || op == 0x95 || op == 0x99 || op == 0x9D {
 			c.sta(addr)
+		} else if op == 0x84 || op == 0x8C || op == 0x94 {
+			c.sty(addr)
 		} else if op == 0x90 {
 			c.bcc()
 		} else if op == 0x9A {
@@ -274,6 +276,8 @@ func (c *CPU) Run() {
 			c.cpy(addr)
 		} else if op == 0xC1 || op == 0xC5 || op == 0xC9 || op == 0xCD || op == 0xD1 || op == 0xD5 || op == 0xD9 || op == 0xDD {
 			c.cmp(addr)
+		} else if op == 0xC8 {
+			c.iny()
 		} else if op == 0xD0 {
 			c.bne()
 		} else if op == 0xD8 {
