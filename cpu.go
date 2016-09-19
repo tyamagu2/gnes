@@ -244,6 +244,8 @@ func (c *CPU) Run() {
 			c.cli()
 		} else if op == 0x60 {
 			c.rts()
+		} else if op == 0x61 || op == 0x65 || op == 0x69 || op == 0x6D || op == 0x71 || op == 0x75 || op == 0x79 || op == 0x7D {
+			c.adc(addr)
 		} else if op == 0x68 {
 			c.pla()
 		} else if op == 0x70 {

@@ -1,5 +1,22 @@
 package gnes
 
+// Add with Carry
+func (c *CPU) adc(addr uint16) {
+	a := c.A
+	d := c.read8(addr)
+	v := int(c.A) + int(d)
+	if c.C {
+		v += 1
+	}
+
+	c.A = uint8(v & 0xFF)
+	// Set V flag if adding values of the same sign results in the opposite sign value
+	c.V = (a^d)&0x80 == 0 && (a^c.A)&0x80 != 0
+	c.C = v > 0xFF
+	c.Z = c.A == 0
+	c.N = c.A >= 0x80
+}
+
 // AND
 func (c *CPU) and(addr uint16) {
 	c.A &= c.read8(addr)
