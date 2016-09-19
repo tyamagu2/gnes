@@ -185,13 +185,6 @@ func (c *CPU) rts() {
 	c.PC = addr + 1
 }
 
-// Stack Instructions
-
-// Transfer X to Stack ptr
-func (c *CPU) txs() {
-	c.SP = c.X
-}
-
 // Push Accumulator
 func (c *CPU) pha() {
 	c.stackPush(c.A)
@@ -213,6 +206,29 @@ func (c *CPU) php() {
 // Pull Processor Status
 func (c *CPU) plp() {
 	c.setProcessorStatus(c.stackPull())
+}
+
+// Subtract with Carry
+func (c *CPU) sbc(addr uint16) {
+	a := c.A
+	d := c.read8(addr)
+	v := int(c.A) - int(d)
+	if !c.C {
+		v -= 1
+	}
+
+	c.A = uint8(v & 0xFF)
+	// Set V flag if adding values of the same sign results in the opposite sign value
+	c.V = (a^d)&0x80 == 0 && (a^c.A)&0x80 != 0
+	c.C = v >= 0
+	c.setZN(c.A)
+}
+
+// Stack Instructions
+
+// Transfer X to Stack ptr
+func (c *CPU) txs() {
+	c.SP = c.X
 }
 
 // Store X Register

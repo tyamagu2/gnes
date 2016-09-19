@@ -280,6 +280,8 @@ func (c *CPU) Run() {
 			c.cld()
 		} else if op == 0xE0 || op == 0xE4 || op == 0xEC {
 			c.cpx(addr)
+		} else if op == 0xE1 || op == 0xE5 || op == 0xE9 || op == 0xED || op == 0xF1 || op == 0xF5 || op == 0xF9 || op == 0xFD {
+			c.sbc(addr)
 		} else if op == 0xEA {
 			c.nop()
 		} else if op == 0xF0 {
