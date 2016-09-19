@@ -393,3 +393,9 @@ func (c *CPU) stackPull() uint8 {
 	c.SP++
 	return c.read8(StackBase + uint16(c.SP))
 }
+
+// Given the result of last instruction, sets Z and N flags
+func (c *CPU) setZN(r uint8) {
+	c.Z = r == 0
+	c.N = r >= 0x80
+}

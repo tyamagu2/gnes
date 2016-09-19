@@ -13,15 +13,13 @@ func (c *CPU) adc(addr uint16) {
 	// Set V flag if adding values of the same sign results in the opposite sign value
 	c.V = (a^d)&0x80 == 0 && (a^c.A)&0x80 != 0
 	c.C = v > 0xFF
-	c.Z = c.A == 0
-	c.N = c.A >= 0x80
+	c.setZN(c.A)
 }
 
 // AND
 func (c *CPU) and(addr uint16) {
 	c.A &= c.read8(addr)
-	c.Z = c.A == 0
-	c.N = c.A >= 0x80
+	c.setZN(c.A)
 }
 
 // Compare accumulator
@@ -29,15 +27,13 @@ func (c *CPU) cmp(addr uint16) {
 	v := c.read8(addr)
 	c.C = c.A >= v
 	w := c.A - v
-	c.Z = w == 0
-	c.N = w >= 0x80
+	c.setZN(w)
 }
 
 // Bitwise Exclusive Or
 func (c *CPU) eor(addr uint16) {
 	c.A ^= c.read8(addr)
-	c.Z = c.A == 0
-	c.N = c.A >= 0x80
+	c.setZN(c.A)
 }
 
 // Jump
@@ -57,8 +53,7 @@ func (c *CPU) jsr(addr uint16) {
 // Load Accumulator
 func (c *CPU) lda(addr uint16) {
 	c.A = c.read8(addr)
-	c.Z = c.A == 0
-	c.N = c.A >= 0x80
+	c.setZN(c.A)
 }
 
 // Store Accumulator
@@ -69,8 +64,13 @@ func (c *CPU) sta(addr uint16) {
 // Load X register
 func (c *CPU) ldx(addr uint16) {
 	c.X = c.read8(addr)
-	c.Z = c.X == 0
-	c.N = c.X >= 0x80
+	c.setZN(c.X)
+}
+
+// Load Y register
+func (c *CPU) ldy(addr uint16) {
+	c.Y = c.read8(addr)
+	c.setZN(c.Y)
 }
 
 // BIT
@@ -147,8 +147,7 @@ func (c *CPU) nop() {
 // Bitwise OR with Accumulator
 func (c *CPU) ora(addr uint16) {
 	c.A |= c.read8(addr)
-	c.Z = c.A == 0
-	c.N = c.A >= 0x80
+	c.setZN(c.A)
 }
 
 // Set Intrrupt
@@ -194,8 +193,7 @@ func (c *CPU) pha() {
 // Pull Accumulator
 func (c *CPU) pla() {
 	c.A = c.stackPull()
-	c.Z = c.A == 0
-	c.N = c.A >= 0x80
+	c.setZN(c.A)
 }
 
 // Push Processor Status
