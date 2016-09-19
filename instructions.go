@@ -24,10 +24,17 @@ func (c *CPU) and(addr uint16) {
 
 // Compare accumulator
 func (c *CPU) cmp(addr uint16) {
-	v := c.read8(addr)
-	c.C = c.A >= v
-	w := c.A - v
-	c.setZN(w)
+	c.compare(c.A, c.read8(addr))
+}
+
+// Compare X register
+func (c *CPU) cpx(addr uint16) {
+	c.compare(c.X, c.read8(addr))
+}
+
+// Compare Y register
+func (c *CPU) cpy(addr uint16) {
+	c.compare(c.Y, c.read8(addr))
 }
 
 // Bitwise Exclusive Or
@@ -211,4 +218,13 @@ func (c *CPU) plp() {
 // Store X Register
 func (c *CPU) stx(addr uint16) {
 	c.Mem.Write(addr, c.X)
+}
+
+// Helpers
+
+// Compare the target register value agains the operand value and set flags
+func (c *CPU) compare(r, o uint8) {
+	c.C = r >= o
+	w := r - o
+	c.setZN(w)
 }
