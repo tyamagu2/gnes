@@ -1,17 +1,25 @@
 package gnes
 
+// http://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
 // Add with Carry
 func (c *CPU) adc(addr uint16) {
-	a := c.A
-	d := c.read8(addr)
-	v := int(c.A) + int(d)
-	if c.C {
-		v += 1
+	c.addWithCarry(c.A, c.read8(addr), c.C)
+}
+
+// Subtract with Carry
+func (c *CPU) sbc(addr uint16) {
+	c.addWithCarry(c.A, ^c.read8(addr), c.C)
+}
+
+func (c *CPU) addWithCarry(m, n uint8, carry bool) {
+	v := int(m) + int(n)
+	if carry {
+		v++
 	}
 
 	c.A = uint8(v & 0xFF)
 	// Set V flag if adding values of the same sign results in the opposite sign value
-	c.V = (a^d)&0x80 == 0 && (a^c.A)&0x80 != 0
+	c.V = (m^n)&0x80 == 0 && (m^c.A)&0x80 != 0
 	c.C = v > 0xFF
 	c.setZN(c.A)
 }
@@ -214,22 +222,6 @@ func (c *CPU) php() {
 // Pull Processor Status
 func (c *CPU) plp() {
 	c.setProcessorStatus(c.stackPull())
-}
-
-// Subtract with Carry
-func (c *CPU) sbc(addr uint16) {
-	a := c.A
-	d := c.read8(addr)
-	v := int(c.A) - int(d)
-	if !c.C {
-		v -= 1
-	}
-
-	c.A = uint8(v & 0xFF)
-	// Set V flag if adding values of the same sign results in the opposite sign value
-	c.V = (a^d)&0x80 == 0 && (a^c.A)&0x80 != 0
-	c.C = v >= 0
-	c.setZN(c.A)
 }
 
 // Stack Instructions
