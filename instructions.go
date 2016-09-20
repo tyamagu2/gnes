@@ -167,6 +167,48 @@ func (c *CPU) ora(addr uint16) {
 
 // Regiser Instructions
 
+// Transfer A to X
+func (c *CPU) tax() {
+	c.X = c.A
+	c.setZN(c.X)
+}
+
+// Transfer X to A
+func (c *CPU) txa() {
+	c.A = c.X
+	c.setZN(c.A)
+}
+
+// Decrement X
+func (c *CPU) dex() {
+	c.X--
+	c.setZN(c.X)
+}
+
+// Increment X
+func (c *CPU) inx() {
+	c.X++
+	c.setZN(c.X)
+}
+
+// Transfer A to Y
+func (c *CPU) tay() {
+	c.Y = c.A
+	c.setZN(c.Y)
+}
+
+// Transfer Y to A
+func (c *CPU) tya() {
+	c.A = c.Y
+	c.setZN(c.A)
+}
+
+// Decrement Y
+func (c *CPU) dey() {
+	c.Y--
+	c.setZN(c.Y)
+}
+
 // Increment Y
 func (c *CPU) iny() {
 	c.Y++
@@ -226,9 +268,15 @@ func (c *CPU) plp() {
 
 // Stack Instructions
 
-// Transfer X to Stack ptr
+// Transfer X to Stack Pointer
 func (c *CPU) txs() {
 	c.SP = c.X
+}
+
+// Transfer Stack Pointer to X
+func (c *CPU) tsx() {
+	c.X = c.SP
+	c.setZN(c.X)
 }
 
 // Store X Register

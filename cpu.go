@@ -182,13 +182,13 @@ func (c *CPU) Run() {
 
 		if mode == zpg {
 			addr = c.addrZpg()
-			c.PC += 1
+			c.PC++
 		} else if mode == zpx {
 			log.Fatalf("Unsupported mode %v\n", mode)
-			c.PC += 1
+			c.PC++
 		} else if mode == zpy {
 			log.Fatalf("Unsupported mode %v\n", mode)
-			c.PC += 1
+			c.PC++
 		} else if mode == abs {
 			addr = c.addrAbs()
 			c.PC += 2
@@ -203,13 +203,13 @@ func (c *CPU) Run() {
 			c.PC += 2
 		} else if mode == imm {
 			addr = c.addrImm()
-			c.PC += 1
+			c.PC++
 		} else if mode == izx {
 			log.Fatalf("Unsupported mode %v\n", mode)
-			c.PC += 1
+			c.PC++
 		} else if mode == izy {
 			log.Fatalf("Unsupported mode %v\n", mode)
-			c.PC += 1
+			c.PC++
 		}
 
 		if op == 0x01 || op == 0x05 || op == 0x09 || op == 0x0D || op == 0x11 || op == 0x15 || op == 0x19 || op == 0x1D {
@@ -252,14 +252,20 @@ func (c *CPU) Run() {
 			c.bvs()
 		} else if op == 0x78 {
 			c.sei()
-		} else if op == 0x86 {
+		} else if op == 0x86 || op == 0x96 || op == 0x8E {
 			c.stx(addr)
 		} else if op == 0x81 || op == 0x85 || op == 0x8D || op == 0x91 || op == 0x95 || op == 0x99 || op == 0x9D {
 			c.sta(addr)
 		} else if op == 0x84 || op == 0x8C || op == 0x94 {
 			c.sty(addr)
+		} else if op == 0x88 {
+			c.dey()
+		} else if op == 0x8A {
+			c.txa()
 		} else if op == 0x90 {
 			c.bcc()
+		} else if op == 0x98 {
+			c.tya()
 		} else if op == 0x9A {
 			c.txs()
 		} else if op == 0xA0 || op == 0xA4 || op == 0xAC || op == 0xB4 || op == 0xBC {
@@ -268,16 +274,24 @@ func (c *CPU) Run() {
 			c.lda(addr)
 		} else if op == 0xA2 || op == 0xA6 || op == 0xAE || op == 0xB6 || op == 0xBE {
 			c.ldx(addr)
+		} else if op == 0xA8 {
+			c.tay()
+		} else if op == 0xAA {
+			c.tax()
 		} else if op == 0xB0 {
 			c.bcs()
 		} else if op == 0xB8 {
 			c.clv()
+		} else if op == 0xBA {
+			c.tsx()
 		} else if op == 0xC0 || op == 0xC4 || op == 0xCC {
 			c.cpy(addr)
 		} else if op == 0xC1 || op == 0xC5 || op == 0xC9 || op == 0xCD || op == 0xD1 || op == 0xD5 || op == 0xD9 || op == 0xDD {
 			c.cmp(addr)
 		} else if op == 0xC8 {
 			c.iny()
+		} else if op == 0xCA {
+			c.dex()
 		} else if op == 0xD0 {
 			c.bne()
 		} else if op == 0xD8 {
@@ -286,6 +300,8 @@ func (c *CPU) Run() {
 			c.cpx(addr)
 		} else if op == 0xE1 || op == 0xE5 || op == 0xE9 || op == 0xED || op == 0xF1 || op == 0xF5 || op == 0xF9 || op == 0xFD {
 			c.sbc(addr)
+		} else if op == 0xE8 {
+			c.inx()
 		} else if op == 0xEA {
 			c.nop()
 		} else if op == 0xF0 {
