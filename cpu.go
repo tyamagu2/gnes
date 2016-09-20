@@ -232,6 +232,8 @@ func (c *CPU) Run() {
 			c.bmi()
 		} else if op == 0x38 {
 			c.sec()
+		} else if op == 0x40 {
+			c.rti()
 		} else if op == 0x41 || op == 0x45 || op == 0x49 || op == 0x4D || op == 0x51 || op == 0x55 || op == 0x59 || op == 0x5D {
 			c.eor(addr)
 		} else if op == 0x48 {

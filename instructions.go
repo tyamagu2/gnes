@@ -235,6 +235,14 @@ func (c *CPU) sed() {
 	c.D = true
 }
 
+// Return from Interrupt
+func (c *CPU) rti() {
+	c.setProcessorStatus(c.stackPull())
+	lo := c.stackPull()
+	hi := c.stackPull()
+	c.PC = uint16(hi)<<8 | uint16(lo)
+}
+
 // Return from Subroutine
 func (c *CPU) rts() {
 	lo := c.stackPull()
