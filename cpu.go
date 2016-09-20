@@ -33,13 +33,13 @@ const (
 )
 
 var addrModes = []AddrMode{
-	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
+	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, abs, abs, abs, abs,
 	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
-	abs, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
+	abs, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, abs, abs, abs, abs,
 	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
-	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
+	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, abs, abs, abs, abs,
 	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
-	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, ind, abs, abs, abs,
+	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, ind, abs, abs, abs,
 	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
 	imm, izx, imm, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
 	rel, izy, imp, izy, zpx, zpx, zpy, zpy, imp, aby, imp, aby, abx, abx, aby, aby,
@@ -80,6 +80,8 @@ func (c *CPU) printState() {
 		fmt.Printf(" ($%2X%2X)", operands[1], operands[0])
 	} else if mode == imm {
 		fmt.Printf(" #$%2X", operands[0])
+	} else if mode == acc {
+		fmt.Printf(" A")
 	} else if mode == rel {
 		fmt.Printf(" *%2X", int8(operands[0]))
 	} else if mode == izx {
@@ -87,7 +89,7 @@ func (c *CPU) printState() {
 	} else if mode == izy {
 		fmt.Printf(" ($%2X),Y", operands[0])
 	}
-	if mode == zpg || mode == imp || mode == rel {
+	if mode == zpg || mode == imp || mode == acc || mode == rel {
 		fmt.Printf("\t")
 	}
 	fmt.Printf("\tA:%2X X:%2X, Y:%2X P:%2X SP:%2X, CYC:TBD\n", c.A, c.X, c.Y, c.P(), c.SP)
@@ -175,7 +177,7 @@ func (c *CPU) Run() {
 		c.printState()
 
 		op := c.read8(c.PC)
-		c.PC += 1
+		c.PC++
 
 		var addr uint16
 		mode := addrModes[op]
@@ -214,6 +216,8 @@ func (c *CPU) Run() {
 
 		if op == 0x01 || op == 0x05 || op == 0x09 || op == 0x0D || op == 0x11 || op == 0x15 || op == 0x19 || op == 0x1D {
 			c.ora(addr)
+		} else if op == 0x06 || op == 0x0A || op == 0x0E || op == 0x16 || op == 0x1E {
+			c.asl(addr, mode)
 		} else if op == 0x08 {
 			c.php()
 		} else if op == 0x10 {
@@ -226,6 +230,8 @@ func (c *CPU) Run() {
 			c.and(addr)
 		} else if op == 0x24 || op == 0x2C {
 			c.bit(addr)
+		} else if op == 0x26 || op == 0x2A || op == 0x2E || op == 0x36 || op == 0x3E {
+			c.rol(addr, mode)
 		} else if op == 0x28 {
 			c.plp()
 		} else if op == 0x30 {
@@ -236,6 +242,8 @@ func (c *CPU) Run() {
 			c.rti()
 		} else if op == 0x41 || op == 0x45 || op == 0x49 || op == 0x4D || op == 0x51 || op == 0x55 || op == 0x59 || op == 0x5D {
 			c.eor(addr)
+		} else if op == 0x46 || op == 0x4A || op == 0x4E || op == 0x56 || op == 0x5E {
+			c.lsr(addr, mode)
 		} else if op == 0x48 {
 			c.pha()
 		} else if op == 0x4C || op == 0x6C {
@@ -248,6 +256,8 @@ func (c *CPU) Run() {
 			c.rts()
 		} else if op == 0x61 || op == 0x65 || op == 0x69 || op == 0x6D || op == 0x71 || op == 0x75 || op == 0x79 || op == 0x7D {
 			c.adc(addr)
+		} else if op == 0x66 || op == 0x6A || op == 0x6E || op == 0x76 || op == 0x7E {
+			c.ror(addr, mode)
 		} else if op == 0x68 {
 			c.pla()
 		} else if op == 0x70 {

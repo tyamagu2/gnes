@@ -30,6 +30,17 @@ func (c *CPU) and(addr uint16) {
 	c.setZN(c.A)
 }
 
+// Arithmetic Shift Left
+func (c *CPU) asl(addr uint16, mode AddrMode) {
+	v := c.A
+	if mode != acc {
+		v = c.read8(addr)
+	}
+	c.C = v >= 0x80
+	c.A = v << 1
+	c.setZN(c.A)
+}
+
 // Compare accumulator
 func (c *CPU) cmp(addr uint16) {
 	c.compare(c.A, c.read8(addr))
@@ -86,6 +97,17 @@ func (c *CPU) ldx(addr uint16) {
 func (c *CPU) ldy(addr uint16) {
 	c.Y = c.read8(addr)
 	c.setZN(c.Y)
+}
+
+// Logical Shift Right
+func (c *CPU) lsr(addr uint16, mode AddrMode) {
+	v := c.A
+	if mode != acc {
+		v = c.read8(addr)
+	}
+	c.C = v&0x01 != 0
+	c.A = v >> 1
+	c.setZN(c.A)
 }
 
 // BIT
@@ -233,6 +255,34 @@ func (c *CPU) cld() {
 // Set Decimal
 func (c *CPU) sed() {
 	c.D = true
+}
+
+// Rotate Left
+func (c *CPU) rol(addr uint16, mode AddrMode) {
+	v := c.A
+	if mode != acc {
+		v = c.read8(addr)
+	}
+	c.A = v << 1
+	if c.C {
+		c.A |= 0x01
+	}
+	c.C = v >= 0x80
+	c.setZN(c.A)
+}
+
+// Rotate Right
+func (c *CPU) ror(addr uint16, mode AddrMode) {
+	v := c.A
+	if mode != acc {
+		v = c.read8(addr)
+	}
+	c.A = v >> 1
+	if c.C {
+		c.A |= 0x80
+	}
+	c.C = v&0x01 != 0
+	c.setZN(c.A)
 }
 
 // Return from Interrupt
