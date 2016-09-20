@@ -62,6 +62,14 @@ func (c *CPU) eor(addr uint16) {
 	c.setZN(c.A)
 }
 
+// Increment memory
+func (c *CPU) inc(addr uint16) {
+	v := c.read8(addr)
+	v++
+	c.Mem.Write(addr, v)
+	c.setZN(v)
+}
+
 // Jump
 func (c *CPU) jmp(addr uint16) {
 	c.PC = addr
@@ -158,6 +166,14 @@ func (c *CPU) beq() {
 // Branch on Not Equal
 func (c *CPU) bne() {
 	c.PC = c.addrRel(!c.Z)
+}
+
+// Decrement memory
+func (c *CPU) dec(addr uint16) {
+	v := c.read8(addr)
+	v--
+	c.Mem.Write(addr, v)
+	c.setZN(v)
 }
 
 // Flag (Processor Status) Instructions

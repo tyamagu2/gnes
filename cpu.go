@@ -300,6 +300,8 @@ func (c *CPU) Run() {
 			c.cpy(addr)
 		} else if op == 0xC1 || op == 0xC5 || op == 0xC9 || op == 0xCD || op == 0xD1 || op == 0xD5 || op == 0xD9 || op == 0xDD {
 			c.cmp(addr)
+		} else if op == 0xC6 || op == 0xCE || op == 0xD6 || op == 0xDE {
+			c.dec(addr)
 		} else if op == 0xC8 {
 			c.iny()
 		} else if op == 0xCA {
@@ -312,6 +314,8 @@ func (c *CPU) Run() {
 			c.cpx(addr)
 		} else if op == 0xE1 || op == 0xE5 || op == 0xE9 || op == 0xED || op == 0xF1 || op == 0xF5 || op == 0xF9 || op == 0xFD {
 			c.sbc(addr)
+		} else if op == 0xE6 || op == 0xEE || op == 0xF6 || op == 0xFE {
+			c.inc(addr)
 		} else if op == 0xE8 {
 			c.inx()
 		} else if op == 0xEA {
