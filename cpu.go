@@ -207,7 +207,7 @@ func (c *CPU) Run() {
 			addr = c.addrImm()
 			c.PC++
 		} else if mode == izx {
-			log.Fatalf("Unsupported mode %v\n", mode)
+			addr = c.addrIzx()
 			c.PC++
 		} else if mode == izy {
 			log.Fatalf("Unsupported mode %v\n", mode)
@@ -405,6 +405,11 @@ func (c *CPU) addrAbs() uint16 {
 
 func (c *CPU) addrInd() uint16 {
 	ref := c.read16(c.PC)
+	return c.read16(ref)
+}
+
+func (c *CPU) addrIzx() uint16 {
+	ref := uint16(c.read8(c.PC) + c.X)
 	return c.read16(ref)
 }
 
