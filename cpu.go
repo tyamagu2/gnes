@@ -6,10 +6,10 @@ import (
 )
 
 const (
-	StackBase   = 0x0100
-	NMIVector   = 0xfffa
-	ResetVector = 0xfffc
-	IRQVector   = 0xfffe
+	stackBase   = 0x0100
+	nmiVector   = 0xFFFA
+	resetVector = 0xFFFC
+	irqVector   = 0xFFFE
 )
 
 type AddrMode uint8
@@ -333,7 +333,7 @@ func (c *CPU) Run() {
 // http://wiki.nesdev.com/w/index.php/CPU_power_up_state
 func (c *CPU) Reset() {
 	// FIXME
-	//c.PC = c.read16(ResetVector)
+	//c.PC = c.read16(resetVector)
 	c.PC = 0xc000
 	c.SP = 0xfd
 	c.A = 0
