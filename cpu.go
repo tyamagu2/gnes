@@ -92,7 +92,7 @@ func (c *CPU) printState() {
 	if mode == zpg || mode == imp || mode == acc || mode == rel {
 		fmt.Printf("\t")
 	}
-	fmt.Printf("\tA:%2X X:%2X, Y:%2X P:%2X SP:%2X, CYC:TBD\n", c.A, c.X, c.Y, c.P(), c.SP)
+	fmt.Printf("\t\t\tA:%2X X:%2X, Y:%2X P:%2X SP:%2X, CYC:TBD\n", c.A, c.X, c.Y, c.P(), c.SP)
 }
 
 // http://www.oxyron.de/html/opcodes02.html
