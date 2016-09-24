@@ -32,13 +32,18 @@ func (c *CPU) and(addr uint16) {
 
 // Arithmetic Shift Left
 func (c *CPU) asl(addr uint16, mode AddrMode) {
-	v := c.A
-	if mode != acc {
-		v = c.read8(addr)
+	var was, v uint8
+	if mode == acc {
+		was = c.A
+		v = was << 1
+		c.A = v
+	} else {
+		was = c.read8(addr)
+		v = was << 1
+		c.Mem.Write(addr, v)
 	}
-	c.C = v >= 0x80
-	c.A = v << 1
-	c.setZN(c.A)
+	c.C = was >= 0x80
+	c.setZN(v)
 }
 
 // Break
@@ -116,13 +121,18 @@ func (c *CPU) ldy(addr uint16) {
 
 // Logical Shift Right
 func (c *CPU) lsr(addr uint16, mode AddrMode) {
-	v := c.A
-	if mode != acc {
-		v = c.read8(addr)
+	var was, v uint8
+	if mode == acc {
+		was = c.A
+		v = was >> 1
+		c.A = v
+	} else {
+		was = c.read8(addr)
+		v = was >> 1
+		c.Mem.Write(addr, v)
 	}
-	c.C = v&0x01 != 0
-	c.A = v >> 1
-	c.setZN(c.A)
+	c.C = was&0x01 != 0
+	c.setZN(v)
 }
 
 // BIT
@@ -282,30 +292,50 @@ func (c *CPU) sed() {
 
 // Rotate Left
 func (c *CPU) rol(addr uint16, mode AddrMode) {
-	v := c.A
-	if mode != acc {
-		v = c.read8(addr)
+	var v, was uint8
+	if mode == acc {
+		was = c.A
+		v = c.rotateLeft(was)
+		c.A = v
+	} else {
+		was = c.read8(addr)
+		v = c.rotateLeft(was)
+		c.Mem.Write(addr, v)
 	}
-	c.A = v << 1
+	c.C = was >= 0x80
+	c.setZN(v)
+}
+
+func (c *CPU) rotateLeft(was uint8) uint8 {
+	v := was << 1
 	if c.C {
-		c.A |= 0x01
+		v |= 0x01
 	}
-	c.C = v >= 0x80
-	c.setZN(c.A)
+	return v
 }
 
 // Rotate Right
 func (c *CPU) ror(addr uint16, mode AddrMode) {
-	v := c.A
-	if mode != acc {
-		v = c.read8(addr)
+	var v, was uint8
+	if mode == acc {
+		was = c.A
+		v = c.rotateRight(was)
+		c.A = v
+	} else {
+		was = c.read8(addr)
+		v = c.rotateRight(was)
+		c.Mem.Write(addr, v)
 	}
-	c.A = v >> 1
+	c.C = was&0x01 != 0
+	c.setZN(v)
+}
+
+func (c *CPU) rotateRight(was uint8) uint8 {
+	v := was >> 1
 	if c.C {
-		c.A |= 0x80
+		v |= 0x80
 	}
-	c.C = v&0x01 != 0
-	c.setZN(c.A)
+	return v
 }
 
 // Return from Interrupt
