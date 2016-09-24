@@ -79,8 +79,7 @@ func (c *CPU) jmp(addr uint16) {
 func (c *CPU) jsr(addr uint16) {
 	// JSR pushes the address-1 of the next operation on to the stack.
 	ret := c.PC - 1
-	c.stackPush(uint8(ret >> 8))
-	c.stackPush(uint8(ret & 0xff))
+	c.stackPush16(ret)
 	c.PC = addr
 }
 
@@ -303,28 +302,23 @@ func (c *CPU) ror(addr uint16, mode AddrMode) {
 
 // Return from Interrupt
 func (c *CPU) rti() {
-	c.setProcessorStatus(c.stackPull())
-	lo := c.stackPull()
-	hi := c.stackPull()
-	c.PC = uint16(hi)<<8 | uint16(lo)
+	c.setProcessorStatus(c.stackPull8())
+	c.PC = c.stackPull16()
 }
 
 // Return from Subroutine
 func (c *CPU) rts() {
-	lo := c.stackPull()
-	hi := c.stackPull()
-	addr := uint16(hi)<<8 | uint16(lo)
-	c.PC = addr + 1
+	c.PC = c.stackPull16() + 1
 }
 
 // Push Accumulator
 func (c *CPU) pha() {
-	c.stackPush(c.A)
+	c.stackPush8(c.A)
 }
 
 // Pull Accumulator
 func (c *CPU) pla() {
-	c.A = c.stackPull()
+	c.A = c.stackPull8()
 	c.setZN(c.A)
 }
 
@@ -332,12 +326,12 @@ func (c *CPU) pla() {
 func (c *CPU) php() {
 	// http://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
 	// PHP sets P register value with B flag set
-	c.stackPush(c.P() | flagB)
+	c.stackPush8(c.P() | flagB)
 }
 
 // Pull Processor Status
 func (c *CPU) plp() {
-	c.setProcessorStatus(c.stackPull())
+	c.setProcessorStatus(c.stackPull8())
 }
 
 // Stack Instructions

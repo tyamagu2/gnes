@@ -438,14 +438,25 @@ func (c *CPU) addrRel(cond bool) uint16 {
 
 // Stack operations
 
-func (c *CPU) stackPush(d uint8) {
-	c.Mem.Write(StackBase+uint16(c.SP), d)
+func (c *CPU) stackPush8(v uint8) {
+	c.Mem.Write(stackBase+uint16(c.SP), v)
 	c.SP--
 }
 
-func (c *CPU) stackPull() uint8 {
+func (c *CPU) stackPush16(v uint16) {
+	c.stackPush8(uint8(v >> 8))
+	c.stackPush8(uint8(v & 0xff))
+}
+
+func (c *CPU) stackPull8() uint8 {
 	c.SP++
-	return c.read8(StackBase + uint16(c.SP))
+	return c.read8(stackBase + uint16(c.SP))
+}
+
+func (c *CPU) stackPull16() uint16 {
+	lo := c.stackPull8()
+	hi := c.stackPull8()
+	return uint16(hi)<<8 | uint16(lo)
 }
 
 // Given the result of last instruction, sets Z and N flags
