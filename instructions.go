@@ -41,6 +41,14 @@ func (c *CPU) asl(addr uint16, mode AddrMode) {
 	c.setZN(c.A)
 }
 
+// Break
+func (c *CPU) brk() {
+	c.stackPush16(c.PC)
+	c.stackPush8(c.P() | flagB)
+	c.I = true
+	c.PC = c.read16(irqVector)
+}
+
 // Compare accumulator
 func (c *CPU) cmp(addr uint16) {
 	c.compare(c.A, c.read8(addr))

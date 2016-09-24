@@ -252,7 +252,9 @@ func (c *CPU) Run() {
 			c.PC += 2
 		}
 
-		if op == 0x01 || op == 0x05 || op == 0x09 || op == 0x0D || op == 0x11 || op == 0x15 || op == 0x19 || op == 0x1D {
+		if op == 0x00 {
+			c.brk()
+		} else if op == 0x01 || op == 0x05 || op == 0x09 || op == 0x0D || op == 0x11 || op == 0x15 || op == 0x19 || op == 0x1D {
 			c.ora(addr)
 		} else if op == 0x06 || op == 0x0A || op == 0x0E || op == 0x16 || op == 0x1E {
 			c.asl(addr, mode)
