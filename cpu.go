@@ -86,6 +86,60 @@ var addrModes = []AddrMode{
 	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
 }
 
+// http://www.oxyron.de/html/opcodes02.html
+var mnemonic = [256]string{
+	"BRK", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO", "PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
+	"BPL", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO", "CLC", "ORA", "NOP", "SLO", "NOP", "ORA", "ASL", "SLO",
+	"JSR", "AND", "KIL", "RLA", "BIT", "AND", "ROL", "RLA", "PLP", "AND", "ROL", "ANC", "BIT", "AND", "ROL", "RLA",
+	"BMI", "AND", "KIL", "RLA", "NOP", "AND", "ROL", "RLA", "SEC", "AND", "NOP", "RLA", "NOP", "AND", "ROL", "RLA",
+	"RTI", "EOR", "KIL", "SRE", "NOP", "EOR", "LSR", "SRE", "PHA", "EOR", "LSR", "ALR", "JMP", "EOR", "LSR", "SRE",
+	"BVC", "EOR", "KIL", "SRE", "NOP", "EOR", "LSR", "SRE", "CLI", "EOR", "NOP", "SRE", "NOP", "EOR", "LSR", "SRE",
+	"RTS", "ADC", "KIL", "RRA", "NOP", "ADC", "ROR", "RRA", "PLA", "ADC", "ROR", "ARR", "JMP", "ADC", "ROR", "RRA",
+	"BVS", "ADC", "KIL", "RRA", "NOP", "ADC", "ROR", "RRA", "SEI", "ADC", "NOP", "RRA", "NOP", "ADC", "ROR", "RRA",
+	"NOP", "STA", "NOP", "SAX", "STY", "STA", "STX", "SAX", "DEY", "NOP", "TXA", "XAA", "STY", "STA", "STX", "SAX",
+	"BCC", "STA", "KIL", "AHX", "STY", "STA", "STX", "SAX", "TYA", "STA", "TXS", "TAS", "SHY", "STA", "SHX", "AHX",
+	"LDY", "LDA", "LDX", "LAX", "LDY", "LDA", "LDX", "LAX", "TAY", "LDA", "TAX", "LAX", "LDY", "LDA", "LDX", "LAX",
+	"BCS", "LDA", "KIL", "LAX", "LDY", "LDA", "LDX", "LAX", "CLV", "LDA", "TSX", "LAS", "LDY", "LDA", "LDX", "LAX",
+	"CPY", "CMP", "NOP", "DCP", "CPY", "CMP", "DEC", "DCP", "INY", "CMP", "DEX", "AXS", "CPY", "CMP", "DEC", "DCP",
+	"BNE", "CMP", "KIL", "DCP", "NOP", "CMP", "DEC", "DCP", "CLD", "CMP", "NOP", "DCP", "NOP", "CMP", "DEC", "DCP",
+	"CPX", "SBC", "NOP", "ISC", "CPX", "SBC", "INC", "ISC", "INX", "SBC", "NOP", "SBC", "CPX", "SBC", "INC", "ISC",
+	"BEQ", "SBC", "KIL", "ISC", "NOP", "SBC", "INC", "ISC", "SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC",
+}
+
+var numOperands = [256]uint8{
+	0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 2, 2, 2, 0,
+	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 2, 2, 2, 0,
+	2, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 2, 2, 2, 0,
+	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 2, 2, 2, 0,
+	0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 2, 2, 2, 0,
+	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 2, 2, 2, 0,
+	0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 2, 2, 2, 0,
+	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 2, 2, 2, 0,
+	1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 2, 2, 2, 0,
+	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 0, 2, 0, 0,
+	1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 2, 2, 2, 0,
+	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 2, 2, 2, 0,
+	1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 2, 2, 2, 0,
+	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 2, 2, 2, 0,
+	1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 2, 2, 2, 0,
+	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 2, 2, 2, 0,
+}
+
+type CPU struct {
+	Mem *Memory
+	PC  uint16 // Program Counter
+	SP  uint8  // Stack Pointer
+	A   uint8  // Accumulator
+	X   uint8  // Index Register X
+	Y   uint8  // Index Register Y
+	C   bool   // Carry Flag
+	Z   bool   // Zero Flag
+	I   bool   // Interrupt Disable
+	D   bool   // Decimal Mode
+	V   bool   // Overflow Flag
+	N   bool   // Negative Flag
+}
+
 func (c *CPU) printState() {
 	opcode := c.read8(c.PC)
 	operands := c.Mem.readBytes(c.PC+1, numOperands[opcode])
@@ -130,76 +184,6 @@ func (c *CPU) printState() {
 	fmt.Printf("\t\t\tA:%2X X:%2X, Y:%2X P:%2X SP:%2X, CYC:TBD\n", c.A, c.X, c.Y, c.P(), c.SP)
 }
 
-// http://www.oxyron.de/html/opcodes02.html
-var mnemonic = [256]string{
-	"BRK", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
-	"PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
-	"BPL", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
-	"CLC", "ORA", "NOP", "SLO", "NOP", "ORA", "ASL", "SLO",
-	"JSR", "AND", "KIL", "RLA", "BIT", "AND", "ROL", "RLA",
-	"PLP", "AND", "ROL", "ANC", "BIT", "AND", "ROL", "RLA",
-	"BMI", "AND", "KIL", "RLA", "NOP", "AND", "ROL", "RLA",
-	"SEC", "AND", "NOP", "RLA", "NOP", "AND", "ROL", "RLA",
-	"RTI", "EOR", "KIL", "SRE", "NOP", "EOR", "LSR", "SRE",
-	"PHA", "EOR", "LSR", "ALR", "JMP", "EOR", "LSR", "SRE",
-	"BVC", "EOR", "KIL", "SRE", "NOP", "EOR", "LSR", "SRE",
-	"CLI", "EOR", "NOP", "SRE", "NOP", "EOR", "LSR", "SRE",
-	"RTS", "ADC", "KIL", "RRA", "NOP", "ADC", "ROR", "RRA",
-	"PLA", "ADC", "ROR", "ARR", "JMP", "ADC", "ROR", "RRA",
-	"BVS", "ADC", "KIL", "RRA", "NOP", "ADC", "ROR", "RRA",
-	"SEI", "ADC", "NOP", "RRA", "NOP", "ADC", "ROR", "RRA",
-	"NOP", "STA", "NOP", "SAX", "STY", "STA", "STX", "SAX",
-	"DEY", "NOP", "TXA", "XAA", "STY", "STA", "STX", "SAX",
-	"BCC", "STA", "KIL", "AHX", "STY", "STA", "STX", "SAX",
-	"TYA", "STA", "TXS", "TAS", "SHY", "STA", "SHX", "AHX",
-	"LDY", "LDA", "LDX", "LAX", "LDY", "LDA", "LDX", "LAX",
-	"TAY", "LDA", "TAX", "LAX", "LDY", "LDA", "LDX", "LAX",
-	"BCS", "LDA", "KIL", "LAX", "LDY", "LDA", "LDX", "LAX",
-	"CLV", "LDA", "TSX", "LAS", "LDY", "LDA", "LDX", "LAX",
-	"CPY", "CMP", "NOP", "DCP", "CPY", "CMP", "DEC", "DCP",
-	"INY", "CMP", "DEX", "AXS", "CPY", "CMP", "DEC", "DCP",
-	"BNE", "CMP", "KIL", "DCP", "NOP", "CMP", "DEC", "DCP",
-	"CLD", "CMP", "NOP", "DCP", "NOP", "CMP", "DEC", "DCP",
-	"CPX", "SBC", "NOP", "ISC", "CPX", "SBC", "INC", "ISC",
-	"INX", "SBC", "NOP", "SBC", "CPX", "SBC", "INC", "ISC",
-	"BEQ", "SBC", "KIL", "ISC", "NOP", "SBC", "INC", "ISC",
-	"SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC",
-}
-
-var numOperands = [256]uint8{
-	0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 2, 2, 2, 0,
-	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 2, 2, 2, 0,
-	2, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 2, 2, 2, 0,
-	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 2, 2, 2, 0,
-	0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 2, 2, 2, 0,
-	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 2, 2, 2, 0,
-	0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 2, 2, 2, 0,
-	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 2, 2, 2, 0,
-	1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 2, 2, 2, 0,
-	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 0, 2, 0, 0,
-	1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 2, 2, 2, 0,
-	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 2, 2, 2, 0,
-	1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 2, 2, 2, 0,
-	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 2, 2, 2, 0,
-	1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 2, 2, 2, 0,
-	1, 1, 0, 0, 1, 1, 1, 0, 0, 2, 0, 0, 2, 2, 2, 0,
-}
-
-type CPU struct {
-	Mem *Memory
-	PC  uint16 // Program Counter
-	SP  uint8  // Stack Pointer
-	A   uint8  // Accumulator
-	X   uint8  // Index Register X
-	Y   uint8  // Index Register Y
-	C   bool   // Carry Flag
-	Z   bool   // Zero Flag
-	I   bool   // Interrupt Disable
-	D   bool   // Decimal Mode
-	V   bool   // Overflow Flag
-	N   bool   // Negative Flag
-}
-
 func NewCPU(rom *ROM) *CPU {
 	mem := &Memory{ROM: rom}
 	cpu := CPU{Mem: mem}
@@ -221,19 +205,19 @@ func (c *CPU) Run() {
 			addr = c.addrZpg()
 			c.PC++
 		} else if mode == zpx {
-			log.Fatalf("Unsupported mode %v\n", mode)
+			addr = c.addrZpx()
 			c.PC++
 		} else if mode == zpy {
-			log.Fatalf("Unsupported mode %v\n", mode)
+			addr = c.addrZpy()
 			c.PC++
 		} else if mode == abs {
 			addr = c.addrAbs()
 			c.PC += 2
 		} else if mode == abx {
-			log.Fatalf("Unsupported mode %v\n", mode)
+			addr = c.addrAbx()
 			c.PC += 2
 		} else if mode == aby {
-			log.Fatalf("Unsupported mode %v\n", mode)
+			addr = c.addrAby()
 			c.PC += 2
 		} else if mode == ind {
 			addr = c.addrInd()
@@ -358,7 +342,7 @@ func (c *CPU) Run() {
 			c.inc(addr)
 		} else if op == 0xE8 {
 			c.inx()
-		} else if op == 0xEA {
+		} else if op == 0x04 || op == 0x0C || op == 0x14 || op == 0x1A || op == 0x1C || op == 0x34 || op == 0x3A || op == 0x3C || op == 0x44 || op == 0x54 || op == 0x5A || op == 0x5C || op == 0x64 || op == 0x74 || op == 0x7A || op == 0x7C || op == 0x80 || op == 0xD4 || op == 0xDA || op == 0xDC || op == 0xEA || op == 0xF4 || op == 0xFA || op == 0xFC {
 			c.nop()
 		} else if op == 0xF0 {
 			c.beq()
@@ -435,32 +419,67 @@ func (c *CPU) read16(addr uint16) uint16 {
 	return uint16(c.read8(addr+1))<<8 | uint16(c.read8(addr))
 }
 
+// Zero Page
+
 func (c *CPU) addrZpg() uint16 {
 	return uint16(c.read8(c.PC))
 }
+
+// Indexed Zero Page
+// Wraparound is used in addition so that the address will always be in zero page.
+// http://www.6502.org/tutorials/6502opcodes.html#WRAP
+
+func (c *CPU) addrZpx() uint16 {
+	return uint16(c.read8(c.PC) + c.X)
+}
+
+func (c *CPU) addrZpy() uint16 {
+	return uint16(c.read8(c.PC) + c.Y)
+}
+
+// Immediate
 
 func (c *CPU) addrImm() uint16 {
 	return c.PC
 }
 
+// Absolute
+
 func (c *CPU) addrAbs() uint16 {
 	return c.read16(c.PC)
 }
 
+// Absolute Indexed
+
+func (c *CPU) addrAbx() uint16 {
+	return c.read16(c.PC) + uint16(c.X)
+}
+
+func (c *CPU) addrAby() uint16 {
+	return c.read16(c.PC) + uint16(c.Y)
+}
+
+// Indirect
 func (c *CPU) addrInd() uint16 {
 	ref := c.read16(c.PC)
 	return c.read16(ref)
 }
+
+// Indexed Indirect
 
 func (c *CPU) addrIzx() uint16 {
 	ref := uint16(c.read8(c.PC) + c.X)
 	return c.read16(ref)
 }
 
+// Indirect Indexed
+
 func (c *CPU) addrIzy() uint16 {
 	ref := uint16(c.read8(c.PC))
 	return c.read16(ref) + uint16(c.Y)
 }
+
+// Indirect for JMP Indirect ($6C)
 
 func (c *CPU) addrInj() uint16 {
 	ref := c.read16(c.PC)
