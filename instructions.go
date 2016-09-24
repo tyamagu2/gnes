@@ -373,3 +373,13 @@ func (c *CPU) compare(r, o uint8) {
 	w := r - o
 	c.setZN(w)
 }
+
+// Not impletented on 6502
+func (c *CPU) dcp() {}
+func (c *CPU) isc() {}
+func (c *CPU) lax() {}
+func (c *CPU) rla() {}
+func (c *CPU) rra() {}
+func (c *CPU) sax() {}
+func (c *CPU) slo() {}
+func (c *CPU) sre() {}

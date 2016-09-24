@@ -240,6 +240,8 @@ func (c *CPU) Run() {
 			c.brk()
 		} else if op == 0x01 || op == 0x05 || op == 0x09 || op == 0x0D || op == 0x11 || op == 0x15 || op == 0x19 || op == 0x1D {
 			c.ora(addr)
+		} else if op == 0x03 || op == 0x07 || op == 0x0F || op == 0x13 || op == 0x17 || op == 0x1B || op == 0x1F {
+			c.slo()
 		} else if op == 0x06 || op == 0x0A || op == 0x0E || op == 0x16 || op == 0x1E {
 			c.asl(addr, mode)
 		} else if op == 0x08 {
@@ -252,6 +254,8 @@ func (c *CPU) Run() {
 			c.jsr(addr)
 		} else if op == 0x21 || op == 0x25 || op == 0x29 || op == 0x2D || op == 0x31 || op == 0x35 || op == 0x39 || op == 0x3D {
 			c.and(addr)
+		} else if op == 0x23 || op == 0x27 || op == 0x2F || op == 0x33 || op == 0x37 || op == 0x3B || op == 0x3F {
+			c.rla()
 		} else if op == 0x24 || op == 0x2C {
 			c.bit(addr)
 		} else if op == 0x26 || op == 0x2A || op == 0x2E || op == 0x36 || op == 0x3E {
@@ -266,6 +270,8 @@ func (c *CPU) Run() {
 			c.rti()
 		} else if op == 0x41 || op == 0x45 || op == 0x49 || op == 0x4D || op == 0x51 || op == 0x55 || op == 0x59 || op == 0x5D {
 			c.eor(addr)
+		} else if op == 0x43 || op == 0x47 || op == 0x4F || op == 0x53 || op == 0x57 || op == 0x5B || op == 0x5F {
+			c.sre()
 		} else if op == 0x46 || op == 0x4A || op == 0x4E || op == 0x56 || op == 0x5E {
 			c.lsr(addr, mode)
 		} else if op == 0x48 {
@@ -280,6 +286,8 @@ func (c *CPU) Run() {
 			c.rts()
 		} else if op == 0x61 || op == 0x65 || op == 0x69 || op == 0x6D || op == 0x71 || op == 0x75 || op == 0x79 || op == 0x7D {
 			c.adc(addr)
+		} else if op == 0x63 || op == 0x67 || op == 0x6F || op == 0x73 || op == 0x77 || op == 0x7B || op == 0x7F {
+			c.rra()
 		} else if op == 0x66 || op == 0x6A || op == 0x6E || op == 0x76 || op == 0x7E {
 			c.ror(addr, mode)
 		} else if op == 0x68 {
@@ -292,6 +300,8 @@ func (c *CPU) Run() {
 			c.stx(addr)
 		} else if op == 0x81 || op == 0x85 || op == 0x8D || op == 0x91 || op == 0x95 || op == 0x99 || op == 0x9D {
 			c.sta(addr)
+		} else if op == 0x83 || op == 0x87 || op == 0x8F || op == 0x97 {
+			c.sax()
 		} else if op == 0x84 || op == 0x8C || op == 0x94 {
 			c.sty(addr)
 		} else if op == 0x88 {
@@ -310,6 +320,8 @@ func (c *CPU) Run() {
 			c.lda(addr)
 		} else if op == 0xA2 || op == 0xA6 || op == 0xAE || op == 0xB6 || op == 0xBE {
 			c.ldx(addr)
+		} else if op == 0xA3 || op == 0xA7 || op == 0xAF || op == 0xB3 || op == 0xB7 || op == 0xBF {
+			c.lax()
 		} else if op == 0xA8 {
 			c.tay()
 		} else if op == 0xAA {
@@ -326,6 +338,8 @@ func (c *CPU) Run() {
 			c.cmp(addr)
 		} else if op == 0xC6 || op == 0xCE || op == 0xD6 || op == 0xDE {
 			c.dec(addr)
+		} else if op == 0xC3 || op == 0xC7 || op == 0xCF || op == 0xD3 || op == 0xD7 || op == 0xDB || op == 0xDF {
+			c.dcp()
 		} else if op == 0xC8 {
 			c.iny()
 		} else if op == 0xCA {
@@ -336,8 +350,10 @@ func (c *CPU) Run() {
 			c.cld()
 		} else if op == 0xE0 || op == 0xE4 || op == 0xEC {
 			c.cpx(addr)
-		} else if op == 0xE1 || op == 0xE5 || op == 0xE9 || op == 0xED || op == 0xF1 || op == 0xF5 || op == 0xF9 || op == 0xFD {
+		} else if op == 0xE1 || op == 0xE5 || op == 0xE9 || op == 0xED || op == 0xF1 || op == 0xF5 || op == 0xF9 || op == 0xFD || op == 0xEB { // EB not supported in 6502
 			c.sbc(addr)
+		} else if op == 0xE3 || op == 0xE7 || op == 0xEF || op == 0xF3 || op == 0xF7 || op == 0xFB || op == 0xFF {
+			c.isc()
 		} else if op == 0xE6 || op == 0xEE || op == 0xF6 || op == 0xFE {
 			c.inc(addr)
 		} else if op == 0xE8 {
