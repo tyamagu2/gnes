@@ -301,7 +301,7 @@ func (c *CPU) Run() {
 		} else if op == 0x81 || op == 0x85 || op == 0x8D || op == 0x91 || op == 0x95 || op == 0x99 || op == 0x9D {
 			c.sta(addr)
 		} else if op == 0x83 || op == 0x87 || op == 0x8F || op == 0x97 {
-			c.sax()
+			c.sax(addr)
 		} else if op == 0x84 || op == 0x8C || op == 0x94 {
 			c.sty(addr)
 		} else if op == 0x88 {
@@ -321,7 +321,7 @@ func (c *CPU) Run() {
 		} else if op == 0xA2 || op == 0xA6 || op == 0xAE || op == 0xB6 || op == 0xBE {
 			c.ldx(addr)
 		} else if op == 0xA3 || op == 0xA7 || op == 0xAF || op == 0xB3 || op == 0xB7 || op == 0xBF {
-			c.lax()
+			c.lax(addr)
 		} else if op == 0xA8 {
 			c.tay()
 		} else if op == 0xAA {
@@ -339,7 +339,7 @@ func (c *CPU) Run() {
 		} else if op == 0xC6 || op == 0xCE || op == 0xD6 || op == 0xDE {
 			c.dec(addr)
 		} else if op == 0xC3 || op == 0xC7 || op == 0xCF || op == 0xD3 || op == 0xD7 || op == 0xDB || op == 0xDF {
-			c.dcp()
+			c.dcp(addr)
 		} else if op == 0xC8 {
 			c.iny()
 		} else if op == 0xCA {

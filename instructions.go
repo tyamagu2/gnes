@@ -404,12 +404,27 @@ func (c *CPU) compare(r, o uint8) {
 	c.setZN(w)
 }
 
-// Not impletented on 6502
-func (c *CPU) dcp() {}
+// Illegal instructions
+
+func (c *CPU) dcp(addr uint16) {
+	v := c.read8(addr) - 1
+	c.compare(c.A, v)
+}
+
+func (c *CPU) lax(addr uint16) {
+	v := c.read8(addr)
+	c.A = v
+	c.X = v
+	c.setZN(v)
+}
+
+func (c *CPU) sax(addr uint16) {
+	c.Mem.Write(addr, c.A&c.X)
+}
+
 func (c *CPU) isc() {}
-func (c *CPU) lax() {}
 func (c *CPU) rla() {}
 func (c *CPU) rra() {}
-func (c *CPU) sax() {}
+
 func (c *CPU) slo() {}
 func (c *CPU) sre() {}
