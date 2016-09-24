@@ -30,6 +30,7 @@ const (
 	rel          // relative
 	izx          // indexedIndirect
 	izy          // indirectIndexed
+	inj          // Indirect for JMP Indirect ($6C)
 )
 
 var addrModes = []AddrMode{
@@ -39,7 +40,7 @@ var addrModes = []AddrMode{
 	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
 	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, abs, abs, abs, abs,
 	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
-	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, ind, abs, abs, abs,
+	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, inj, abs, abs, abs,
 	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
 	imm, izx, imm, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
 	rel, izy, imp, izy, zpx, zpx, zpy, zpy, imp, aby, imp, aby, abx, abx, aby, aby,
@@ -76,7 +77,7 @@ func (c *CPU) printState() {
 		fmt.Printf(" $%2X%2X,X", operands[1], operands[0])
 	} else if mode == aby {
 		fmt.Printf(" $%2X%2X,Y", operands[1], operands[0])
-	} else if mode == ind {
+	} else if mode == ind || mode == inj {
 		fmt.Printf(" ($%2X%2X)", operands[1], operands[0])
 	} else if mode == imm {
 		fmt.Printf(" #$%2X", operands[0])
@@ -212,6 +213,9 @@ func (c *CPU) Run() {
 		} else if mode == izy {
 			addr = c.addrIzy()
 			c.PC++
+		} else if mode == inj {
+			addr = c.addrInj()
+			c.PC += 2
 		}
 
 		if op == 0x01 || op == 0x05 || op == 0x09 || op == 0x0D || op == 0x11 || op == 0x15 || op == 0x19 || op == 0x1D {
@@ -420,6 +424,14 @@ func (c *CPU) addrIzx() uint16 {
 func (c *CPU) addrIzy() uint16 {
 	ref := uint16(c.read8(c.PC))
 	return c.read16(ref) + uint16(c.Y)
+}
+
+func (c *CPU) addrInj() uint16 {
+	ref := c.read16(c.PC)
+	lo := uint16(c.read8(ref))
+	ha := (ref & 0xff00) | (ref+1)&0x00ff
+	hi := uint16(c.read8(ha))
+	return hi<<8 | lo
 }
 
 func (c *CPU) addrRel(cond bool) uint16 {
