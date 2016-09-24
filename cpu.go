@@ -33,6 +33,40 @@ const (
 	inj          // Indirect for JMP Indirect ($6C)
 )
 
+func (m AddrMode) String() string {
+	if m == zpg {
+		return "Zero Page"
+	} else if m == zpx {
+		return "Zero Page X"
+	} else if m == zpy {
+		return "Zero Page Y"
+	} else if m == abs {
+		return "Absolute"
+	} else if m == abx {
+		return "Absolute X"
+	} else if m == aby {
+		return "Absolute Y"
+	} else if m == ind {
+		return "Indirect"
+	} else if m == imp {
+		return "Implied"
+	} else if m == acc {
+		return "Accumulator"
+	} else if m == imm {
+		return "Immediate"
+	} else if m == rel {
+		return "Relative"
+	} else if m == izx {
+		return "Indexed Indirect (Indirect X)"
+	} else if m == izy {
+		return "Indirect Indexed (Indirect Y)"
+	} else if m == inj {
+		return "Indirect for JMP Indirect (%$C)"
+	}
+
+	return "Unknown"
+}
+
 var addrModes = []AddrMode{
 	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, abs, abs, abs, abs,
 	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
