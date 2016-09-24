@@ -13,8 +13,9 @@ func (m *Memory) readBytes(addr uint16, _n uint8) []uint8 {
 	} else if addr >= 0x8000 {
 		b := addr - 0x8000
 		return m.ROM.RPG[b : b+n]
+	} else {
+		return m.Data[addr : addr+n]
 	}
-	return []uint8{}
 }
 
 func (m *Memory) Read(addr uint16) uint8 {
