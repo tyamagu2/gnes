@@ -408,7 +408,14 @@ func (c *CPU) compare(r, o uint8) {
 
 func (c *CPU) dcp(addr uint16) {
 	v := c.read8(addr) - 1
+	c.Mem.Write(addr, v)
 	c.compare(c.A, v)
+}
+
+func (c *CPU) isc(addr uint16) {
+	v := c.read8(addr) + 1
+	c.Mem.Write(addr, v)
+	c.addWithCarry(c.A, ^v, c.C)
 }
 
 func (c *CPU) lax(addr uint16) {
@@ -422,7 +429,6 @@ func (c *CPU) sax(addr uint16) {
 	c.Mem.Write(addr, c.A&c.X)
 }
 
-func (c *CPU) isc() {}
 func (c *CPU) rla() {}
 func (c *CPU) rra() {}
 

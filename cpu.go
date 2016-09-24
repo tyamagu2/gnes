@@ -353,7 +353,7 @@ func (c *CPU) Run() {
 		} else if op == 0xE1 || op == 0xE5 || op == 0xE9 || op == 0xED || op == 0xF1 || op == 0xF5 || op == 0xF9 || op == 0xFD || op == 0xEB { // EB not supported in 6502
 			c.sbc(addr)
 		} else if op == 0xE3 || op == 0xE7 || op == 0xEF || op == 0xF3 || op == 0xF7 || op == 0xFB || op == 0xFF {
-			c.isc()
+			c.isc(addr)
 		} else if op == 0xE6 || op == 0xEE || op == 0xF6 || op == 0xFE {
 			c.inc(addr)
 		} else if op == 0xE8 {
@@ -404,7 +404,7 @@ func (c *CPU) setProcessorStatus(flags uint8) {
 }
 
 func (c *CPU) P() uint8 {
-	var p uint8 = flagU // always set U
+	p := flagU // always set U
 
 	if c.C {
 		p |= flagC
@@ -511,12 +511,10 @@ func (c *CPU) addrRel(cond bool) uint16 {
 		// treat offset as signed
 		if offset < 0x80 {
 			return c.PC + 1 + offset
-		} else {
-			return c.PC + 1 + offset - 0x100
 		}
-	} else {
-		return c.PC + 1
+		return c.PC + 1 + offset - 0x100
 	}
+	return c.PC + 1
 }
 
 // Stack operations
