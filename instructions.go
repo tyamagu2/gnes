@@ -406,18 +406,21 @@ func (c *CPU) compare(r, o uint8) {
 
 // Illegal instructions
 
+// Decrement & Compare
 func (c *CPU) dcp(addr uint16) {
 	v := c.read8(addr) - 1
 	c.Mem.Write(addr, v)
 	c.compare(c.A, v)
 }
 
+// INC + SBC (Increment & Subtract wiht Carry)
 func (c *CPU) isc(addr uint16) {
 	v := c.read8(addr) + 1
 	c.Mem.Write(addr, v)
 	c.addWithCarry(c.A, ^v, c.C)
 }
 
+// LDA + LDX (Load Accumulator & X)
 func (c *CPU) lax(addr uint16) {
 	v := c.read8(addr)
 	c.A = v
@@ -425,12 +428,46 @@ func (c *CPU) lax(addr uint16) {
 	c.setZN(v)
 }
 
+// Store Accumulator & X
 func (c *CPU) sax(addr uint16) {
 	c.Mem.Write(addr, c.A&c.X)
 }
 
-func (c *CPU) rla() {}
-func (c *CPU) rra() {}
+// ROL + AND (Rotate Left & AND)
+func (c *CPU) rla(addr uint16) {
+	was := c.read8(addr)
+	v := c.rotateLeft(was)
+	c.Mem.Write(addr, v)
+	c.C = was >= 0x80
+	c.A &= v
+	c.setZN(c.A)
+}
 
-func (c *CPU) slo() {}
-func (c *CPU) sre() {}
+// ROR + ADC (Rotate Left & Add with Carry)
+func (c *CPU) rra(addr uint16) {
+	was := c.read8(addr)
+	v := c.rotateRight(was)
+	c.Mem.Write(addr, v)
+	c.C = was&0x01 != 0
+	c.addWithCarry(c.A, v, c.C)
+}
+
+// ASL + ORA (Arithmetic Shift Left & Bitwise OR with Accumulator)
+func (c *CPU) slo(addr uint16) {
+	was := c.read8(addr)
+	c.C = was >= 0x80
+	v := was << 1
+	c.Mem.Write(addr, v)
+	c.A |= v
+	c.setZN(c.A)
+}
+
+// LSR + EOR (Logical Shift Right & Exclusive OR with Accumulator
+func (c *CPU) sre(addr uint16) {
+	was := c.read8(addr)
+	c.C = was&0x01 != 0
+	v := was >> 1
+	c.Mem.Write(addr, v)
+	c.A ^= v
+	c.setZN(c.A)
+}

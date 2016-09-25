@@ -241,7 +241,7 @@ func (c *CPU) Run() {
 		} else if op == 0x01 || op == 0x05 || op == 0x09 || op == 0x0D || op == 0x11 || op == 0x15 || op == 0x19 || op == 0x1D {
 			c.ora(addr)
 		} else if op == 0x03 || op == 0x07 || op == 0x0F || op == 0x13 || op == 0x17 || op == 0x1B || op == 0x1F {
-			c.slo()
+			c.slo(addr)
 		} else if op == 0x06 || op == 0x0A || op == 0x0E || op == 0x16 || op == 0x1E {
 			c.asl(addr, mode)
 		} else if op == 0x08 {
@@ -255,7 +255,7 @@ func (c *CPU) Run() {
 		} else if op == 0x21 || op == 0x25 || op == 0x29 || op == 0x2D || op == 0x31 || op == 0x35 || op == 0x39 || op == 0x3D {
 			c.and(addr)
 		} else if op == 0x23 || op == 0x27 || op == 0x2F || op == 0x33 || op == 0x37 || op == 0x3B || op == 0x3F {
-			c.rla()
+			c.rla(addr)
 		} else if op == 0x24 || op == 0x2C {
 			c.bit(addr)
 		} else if op == 0x26 || op == 0x2A || op == 0x2E || op == 0x36 || op == 0x3E {
@@ -271,7 +271,7 @@ func (c *CPU) Run() {
 		} else if op == 0x41 || op == 0x45 || op == 0x49 || op == 0x4D || op == 0x51 || op == 0x55 || op == 0x59 || op == 0x5D {
 			c.eor(addr)
 		} else if op == 0x43 || op == 0x47 || op == 0x4F || op == 0x53 || op == 0x57 || op == 0x5B || op == 0x5F {
-			c.sre()
+			c.sre(addr)
 		} else if op == 0x46 || op == 0x4A || op == 0x4E || op == 0x56 || op == 0x5E {
 			c.lsr(addr, mode)
 		} else if op == 0x48 {
@@ -287,7 +287,7 @@ func (c *CPU) Run() {
 		} else if op == 0x61 || op == 0x65 || op == 0x69 || op == 0x6D || op == 0x71 || op == 0x75 || op == 0x79 || op == 0x7D {
 			c.adc(addr)
 		} else if op == 0x63 || op == 0x67 || op == 0x6F || op == 0x73 || op == 0x77 || op == 0x7B || op == 0x7F {
-			c.rra()
+			c.rra(addr)
 		} else if op == 0x66 || op == 0x6A || op == 0x6E || op == 0x76 || op == 0x7E {
 			c.ror(addr, mode)
 		} else if op == 0x68 {
