@@ -9,11 +9,11 @@ const (
 	irqVector   = 0xFFFE
 )
 
-type AddrMode uint8
+type addrMode uint8
 
 // Addressing modes
 const (
-	_   AddrMode = iota
+	_   addrMode = iota
 	zpg          // zeroPage
 	zpx          // zeroPageX
 	zpy          // zeroPageY
@@ -29,7 +29,7 @@ const (
 	izy          // indirectIndexed
 )
 
-func (m AddrMode) String() string {
+func (m addrMode) String() string {
 	if m == zpg {
 		return "Zero Page"
 	} else if m == zpx {
@@ -61,7 +61,7 @@ func (m AddrMode) String() string {
 	return "Unknown"
 }
 
-var instructions = []func(*CPU, uint16, AddrMode){
+var instructions = []func(*CPU, uint16, addrMode){
 	brk, ora, kil, slo, nop, ora, asl, slo, php, ora, asl, anc, nop, ora, asl, slo,
 	bpl, ora, kil, slo, nop, ora, asl, slo, clc, ora, nop, slo, nop, ora, asl, slo,
 	jsr, and, kil, rla, bit, and, rol, rla, plp, and, rol, anc, bit, and, rol, rla,
@@ -80,7 +80,7 @@ var instructions = []func(*CPU, uint16, AddrMode){
 	beq, sbc, kil, isc, nop, sbc, inc, isc, sed, sbc, nop, isc, nop, sbc, inc, isc,
 }
 
-var addrModes = []AddrMode{
+var addrModes = []addrMode{
 	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, abs, abs, abs, abs,
 	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
 	abs, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, abs, abs, abs, abs,
