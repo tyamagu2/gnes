@@ -438,6 +438,9 @@ func (c *CPU) read16WrapAround(addr uint16) uint16 {
 	return hi<<8 | lo
 }
 
+// Addressing Modes
+// http://wiki.nesdev.com/w/index.php/CPU_addressing_modes
+
 // Zero Page
 
 func (c *CPU) addrZpg() uint16 {
