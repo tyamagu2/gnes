@@ -30,7 +30,6 @@ const (
 	rel          // relative
 	izx          // indexedIndirect
 	izy          // indirectIndexed
-	inj          // Indirect for JMP Indirect ($6C)
 )
 
 func (m AddrMode) String() string {
@@ -60,8 +59,6 @@ func (m AddrMode) String() string {
 		return "Indexed Indirect (Indirect X)"
 	} else if m == izy {
 		return "Indirect Indexed (Indirect Y)"
-	} else if m == inj {
-		return "Indirect for JMP Indirect (%$C)"
 	}
 
 	return "Unknown"
@@ -74,7 +71,7 @@ var addrModes = []AddrMode{
 	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
 	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, abs, abs, abs, abs,
 	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
-	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, inj, abs, abs, abs,
+	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, ind, abs, abs, abs,
 	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
 	imm, izx, imm, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
 	rel, izy, imp, izy, zpx, zpx, zpy, zpy, imp, aby, imp, aby, abx, abx, aby, aby,
@@ -165,7 +162,7 @@ func (c *CPU) printState() {
 		fmt.Printf(" $%2X%2X,X", operands[1], operands[0])
 	} else if mode == aby {
 		fmt.Printf(" $%2X%2X,Y", operands[1], operands[0])
-	} else if mode == ind || mode == inj {
+	} else if mode == ind {
 		fmt.Printf(" ($%2X%2X)", operands[1], operands[0])
 	} else if mode == imm {
 		fmt.Printf(" #$%2X", operands[0])
@@ -231,9 +228,6 @@ func (c *CPU) Run() {
 		} else if mode == izy {
 			addr = c.addrIzy()
 			c.PC++
-		} else if mode == inj {
-			addr = c.addrInj()
-			c.PC += 2
 		}
 
 		if op == 0x00 {
@@ -435,6 +429,12 @@ func (c *CPU) read16(addr uint16) uint16 {
 	return uint16(c.read8(addr+1))<<8 | uint16(c.read8(addr))
 }
 
+func (c *CPU) read16WrapAround(addr uint16) uint16 {
+	lo := uint16(c.read8(addr))
+	hi := uint16(c.read8((addr & 0xff00) | (addr+1)&0x00ff))
+	return hi<<8 | lo
+}
+
 // Zero Page
 
 func (c *CPU) addrZpg() uint16 {
@@ -478,31 +478,21 @@ func (c *CPU) addrAby() uint16 {
 // Indirect
 func (c *CPU) addrInd() uint16 {
 	ref := c.read16(c.PC)
-	return c.read16(ref)
+	return c.read16WrapAround(ref)
 }
 
 // Indexed Indirect
 
 func (c *CPU) addrIzx() uint16 {
 	ref := uint16(c.read8(c.PC) + c.X)
-	return c.read16(ref)
+	return c.read16WrapAround(ref)
 }
 
 // Indirect Indexed
 
 func (c *CPU) addrIzy() uint16 {
 	ref := uint16(c.read8(c.PC))
-	return c.read16(ref) + uint16(c.Y)
-}
-
-// Indirect for JMP Indirect ($6C)
-
-func (c *CPU) addrInj() uint16 {
-	ref := c.read16(c.PC)
-	lo := uint16(c.read8(ref))
-	ha := (ref & 0xff00) | (ref+1)&0x00ff
-	hi := uint16(c.read8(ha))
-	return hi<<8 | lo
+	return c.read16WrapAround(ref) + uint16(c.Y)
 }
 
 func (c *CPU) addrRel(cond bool) uint16 {
