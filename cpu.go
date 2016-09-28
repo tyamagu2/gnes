@@ -1,9 +1,6 @@
 package gnes
 
-import (
-	"fmt"
-	"log"
-)
+import "fmt"
 
 const (
 	stackBase   = 0x0100
@@ -62,6 +59,25 @@ func (m AddrMode) String() string {
 	}
 
 	return "Unknown"
+}
+
+var instructions = []func(*CPU, uint16, AddrMode){
+	brk, ora, kil, slo, nop, ora, asl, slo, php, ora, asl, anc, nop, ora, asl, slo,
+	bpl, ora, kil, slo, nop, ora, asl, slo, clc, ora, nop, slo, nop, ora, asl, slo,
+	jsr, and, kil, rla, bit, and, rol, rla, plp, and, rol, anc, bit, and, rol, rla,
+	bmi, and, kil, rla, nop, and, rol, rla, sec, and, nop, rla, nop, and, rol, rla,
+	rti, eor, kil, sre, nop, eor, lsr, sre, pha, eor, lsr, alr, jmp, eor, lsr, sre,
+	bvc, eor, kil, sre, nop, eor, lsr, sre, cli, eor, nop, sre, nop, eor, lsr, sre,
+	rts, adc, kil, rra, nop, adc, ror, rra, pla, adc, ror, arr, jmp, adc, ror, rra,
+	bvs, adc, kil, rra, nop, adc, ror, rra, sei, adc, nop, rra, nop, adc, ror, rra,
+	nop, sta, nop, sax, sty, sta, stx, sax, dey, nop, txa, xaa, sty, sta, stx, sax,
+	bcc, sta, kil, ahx, sty, sta, stx, sax, tya, sta, txs, tas, shy, sta, shx, ahx,
+	ldy, lda, ldx, lax, ldy, lda, ldx, lax, tay, lda, tax, lax, ldy, lda, ldx, lax,
+	bcs, lda, kil, lax, ldy, lda, ldx, lax, clv, lda, tsx, las, ldy, lda, ldx, lax,
+	cpy, cmp, nop, dcp, cpy, cmp, dec, dcp, iny, cmp, dex, axs, cpy, cmp, dec, dcp,
+	bne, cmp, kil, dcp, nop, cmp, dec, dcp, cld, cmp, nop, dcp, nop, cmp, dec, dcp,
+	cpx, sbc, nop, isc, cpx, sbc, inc, isc, inx, sbc, nop, sbc, cpx, sbc, inc, isc,
+	beq, sbc, kil, isc, nop, sbc, inc, isc, sed, sbc, nop, isc, nop, sbc, inc, isc,
 }
 
 var addrModes = []AddrMode{
@@ -192,6 +208,11 @@ func (c *CPU) Run() {
 	for {
 		c.printState()
 
+		// FIXME
+		if c.PC == 0xC66E {
+			return
+		}
+
 		op := c.read8(c.PC)
 		c.PC++
 
@@ -233,137 +254,7 @@ func (c *CPU) Run() {
 			c.PC++
 		}
 
-		if op == 0x00 {
-			c.brk()
-		} else if op == 0x01 || op == 0x05 || op == 0x09 || op == 0x0D || op == 0x11 || op == 0x15 || op == 0x19 || op == 0x1D {
-			c.ora(addr)
-		} else if op == 0x03 || op == 0x07 || op == 0x0F || op == 0x13 || op == 0x17 || op == 0x1B || op == 0x1F {
-			c.slo(addr)
-		} else if op == 0x06 || op == 0x0A || op == 0x0E || op == 0x16 || op == 0x1E {
-			c.asl(addr, mode)
-		} else if op == 0x08 {
-			c.php()
-		} else if op == 0x10 {
-			c.bpl(addr)
-		} else if op == 0x18 {
-			c.clc()
-		} else if op == 0x20 {
-			c.jsr(addr)
-		} else if op == 0x21 || op == 0x25 || op == 0x29 || op == 0x2D || op == 0x31 || op == 0x35 || op == 0x39 || op == 0x3D {
-			c.and(addr)
-		} else if op == 0x23 || op == 0x27 || op == 0x2F || op == 0x33 || op == 0x37 || op == 0x3B || op == 0x3F {
-			c.rla(addr)
-		} else if op == 0x24 || op == 0x2C {
-			c.bit(addr)
-		} else if op == 0x26 || op == 0x2A || op == 0x2E || op == 0x36 || op == 0x3E {
-			c.rol(addr, mode)
-		} else if op == 0x28 {
-			c.plp()
-		} else if op == 0x30 {
-			c.bmi(addr)
-		} else if op == 0x38 {
-			c.sec()
-		} else if op == 0x40 {
-			c.rti()
-		} else if op == 0x41 || op == 0x45 || op == 0x49 || op == 0x4D || op == 0x51 || op == 0x55 || op == 0x59 || op == 0x5D {
-			c.eor(addr)
-		} else if op == 0x43 || op == 0x47 || op == 0x4F || op == 0x53 || op == 0x57 || op == 0x5B || op == 0x5F {
-			c.sre(addr)
-		} else if op == 0x46 || op == 0x4A || op == 0x4E || op == 0x56 || op == 0x5E {
-			c.lsr(addr, mode)
-		} else if op == 0x48 {
-			c.pha()
-		} else if op == 0x4C || op == 0x6C {
-			c.jmp(addr)
-		} else if op == 0x50 {
-			c.bvc(addr)
-		} else if op == 0x58 {
-			c.cli()
-		} else if op == 0x60 {
-			c.rts()
-		} else if op == 0x61 || op == 0x65 || op == 0x69 || op == 0x6D || op == 0x71 || op == 0x75 || op == 0x79 || op == 0x7D {
-			c.adc(addr)
-		} else if op == 0x63 || op == 0x67 || op == 0x6F || op == 0x73 || op == 0x77 || op == 0x7B || op == 0x7F {
-			c.rra(addr)
-		} else if op == 0x66 || op == 0x6A || op == 0x6E || op == 0x76 || op == 0x7E {
-			c.ror(addr, mode)
-		} else if op == 0x68 {
-			c.pla()
-		} else if op == 0x70 {
-			c.bvs(addr)
-		} else if op == 0x78 {
-			c.sei()
-		} else if op == 0x86 || op == 0x96 || op == 0x8E {
-			c.stx(addr)
-		} else if op == 0x81 || op == 0x85 || op == 0x8D || op == 0x91 || op == 0x95 || op == 0x99 || op == 0x9D {
-			c.sta(addr)
-		} else if op == 0x83 || op == 0x87 || op == 0x8F || op == 0x97 {
-			c.sax(addr)
-		} else if op == 0x84 || op == 0x8C || op == 0x94 {
-			c.sty(addr)
-		} else if op == 0x88 {
-			c.dey()
-		} else if op == 0x8A {
-			c.txa()
-		} else if op == 0x90 {
-			c.bcc(addr)
-		} else if op == 0x98 {
-			c.tya()
-		} else if op == 0x9A {
-			c.txs()
-		} else if op == 0xA0 || op == 0xA4 || op == 0xAC || op == 0xB4 || op == 0xBC {
-			c.ldy(addr)
-		} else if op == 0xA1 || op == 0xA5 || op == 0xA9 || op == 0xAD || op == 0xB1 || op == 0xB5 || op == 0xB9 || op == 0xBD {
-			c.lda(addr)
-		} else if op == 0xA2 || op == 0xA6 || op == 0xAE || op == 0xB6 || op == 0xBE {
-			c.ldx(addr)
-		} else if op == 0xA3 || op == 0xA7 || op == 0xAF || op == 0xB3 || op == 0xB7 || op == 0xBF {
-			c.lax(addr)
-		} else if op == 0xA8 {
-			c.tay()
-		} else if op == 0xAA {
-			c.tax()
-		} else if op == 0xB0 {
-			c.bcs(addr)
-		} else if op == 0xB8 {
-			c.clv()
-		} else if op == 0xBA {
-			c.tsx()
-		} else if op == 0xC0 || op == 0xC4 || op == 0xCC {
-			c.cpy(addr)
-		} else if op == 0xC1 || op == 0xC5 || op == 0xC9 || op == 0xCD || op == 0xD1 || op == 0xD5 || op == 0xD9 || op == 0xDD {
-			c.cmp(addr)
-		} else if op == 0xC6 || op == 0xCE || op == 0xD6 || op == 0xDE {
-			c.dec(addr)
-		} else if op == 0xC3 || op == 0xC7 || op == 0xCF || op == 0xD3 || op == 0xD7 || op == 0xDB || op == 0xDF {
-			c.dcp(addr)
-		} else if op == 0xC8 {
-			c.iny()
-		} else if op == 0xCA {
-			c.dex()
-		} else if op == 0xD0 {
-			c.bne(addr)
-		} else if op == 0xD8 {
-			c.cld()
-		} else if op == 0xE0 || op == 0xE4 || op == 0xEC {
-			c.cpx(addr)
-		} else if op == 0xE1 || op == 0xE5 || op == 0xE9 || op == 0xED || op == 0xF1 || op == 0xF5 || op == 0xF9 || op == 0xFD || op == 0xEB { // EB not supported in 6502
-			c.sbc(addr)
-		} else if op == 0xE3 || op == 0xE7 || op == 0xEF || op == 0xF3 || op == 0xF7 || op == 0xFB || op == 0xFF {
-			c.isc(addr)
-		} else if op == 0xE6 || op == 0xEE || op == 0xF6 || op == 0xFE {
-			c.inc(addr)
-		} else if op == 0xE8 {
-			c.inx()
-		} else if op == 0x04 || op == 0x0C || op == 0x14 || op == 0x1A || op == 0x1C || op == 0x34 || op == 0x3A || op == 0x3C || op == 0x44 || op == 0x54 || op == 0x5A || op == 0x5C || op == 0x64 || op == 0x74 || op == 0x7A || op == 0x7C || op == 0x80 || op == 0xD4 || op == 0xDA || op == 0xDC || op == 0xEA || op == 0xF4 || op == 0xFA || op == 0xFC {
-			c.nop()
-		} else if op == 0xF0 {
-			c.beq(addr)
-		} else if op == 0xF8 {
-			c.sed()
-		} else {
-			log.Fatalf("0x%0x not supported yet.", op)
-		}
+		instructions[op](c, addr, mode)
 	}
 }
 
