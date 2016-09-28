@@ -151,34 +151,34 @@ func (c *CPU) printState() {
 	}
 	fmt.Printf("\t%s", mnemonic[opcode])
 	if mode == zpg {
-		fmt.Printf(" $%2X", operands[0])
+		fmt.Printf(" $%02X", operands[0])
 	} else if mode == zpx {
-		fmt.Printf(" $%2X,X", operands[0])
+		fmt.Printf(" $%02X,X", operands[0])
 	} else if mode == zpy {
-		fmt.Printf(" $%2X,Y", operands[0])
+		fmt.Printf(" $%02X,Y", operands[0])
 	} else if mode == abs {
-		fmt.Printf(" $%2X%2X", operands[1], operands[0])
+		fmt.Printf(" $%02X%02X", operands[1], operands[0])
 	} else if mode == abx {
-		fmt.Printf(" $%2X%2X,X", operands[1], operands[0])
+		fmt.Printf(" $%02X%02X,X", operands[1], operands[0])
 	} else if mode == aby {
-		fmt.Printf(" $%2X%2X,Y", operands[1], operands[0])
+		fmt.Printf(" $%02X%02X,Y", operands[1], operands[0])
 	} else if mode == ind {
-		fmt.Printf(" ($%2X%2X)", operands[1], operands[0])
+		fmt.Printf(" ($%02X%02X)", operands[1], operands[0])
 	} else if mode == imm {
-		fmt.Printf(" #$%2X", operands[0])
+		fmt.Printf(" #$%02X", operands[0])
 	} else if mode == acc {
 		fmt.Printf(" A")
 	} else if mode == rel {
-		fmt.Printf(" *%2X", int8(operands[0]))
+		fmt.Printf(" *%02X", int8(operands[0]))
 	} else if mode == izx {
-		fmt.Printf(" ($%2X,X)", operands[0])
+		fmt.Printf(" ($%02X,X)", operands[0])
 	} else if mode == izy {
-		fmt.Printf(" ($%2X),Y", operands[0])
+		fmt.Printf(" ($%02X),Y", operands[0])
 	}
 	if mode == zpg || mode == imp || mode == acc || mode == rel {
 		fmt.Printf("\t")
 	}
-	fmt.Printf("\t\t\tA:%2X X:%2X Y:%2X P:%2X SP:%2X CYC:TBD\n", c.A, c.X, c.Y, c.P(), c.SP)
+	fmt.Printf("\t\t\tA:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:TBD\n", c.A, c.X, c.Y, c.P(), c.SP)
 }
 
 func NewCPU(rom *ROM) *CPU {
@@ -359,7 +359,7 @@ func (c *CPU) Run() {
 		} else if op == 0xF8 {
 			c.sed()
 		} else {
-			log.Fatalf("0x%x not supported yet.", op)
+			log.Fatalf("0x%0x not supported yet.", op)
 		}
 	}
 }
