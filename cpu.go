@@ -222,6 +222,9 @@ func (c *CPU) Run() {
 		} else if mode == imm {
 			addr = c.addrImm()
 			c.PC++
+		} else if mode == rel {
+			addr = c.addrRel()
+			c.PC++
 		} else if mode == izx {
 			addr = c.addrIzx()
 			c.PC++
@@ -241,7 +244,7 @@ func (c *CPU) Run() {
 		} else if op == 0x08 {
 			c.php()
 		} else if op == 0x10 {
-			c.bpl()
+			c.bpl(addr)
 		} else if op == 0x18 {
 			c.clc()
 		} else if op == 0x20 {
@@ -257,7 +260,7 @@ func (c *CPU) Run() {
 		} else if op == 0x28 {
 			c.plp()
 		} else if op == 0x30 {
-			c.bmi()
+			c.bmi(addr)
 		} else if op == 0x38 {
 			c.sec()
 		} else if op == 0x40 {
@@ -273,7 +276,7 @@ func (c *CPU) Run() {
 		} else if op == 0x4C || op == 0x6C {
 			c.jmp(addr)
 		} else if op == 0x50 {
-			c.bvc()
+			c.bvc(addr)
 		} else if op == 0x58 {
 			c.cli()
 		} else if op == 0x60 {
@@ -287,7 +290,7 @@ func (c *CPU) Run() {
 		} else if op == 0x68 {
 			c.pla()
 		} else if op == 0x70 {
-			c.bvs()
+			c.bvs(addr)
 		} else if op == 0x78 {
 			c.sei()
 		} else if op == 0x86 || op == 0x96 || op == 0x8E {
@@ -303,7 +306,7 @@ func (c *CPU) Run() {
 		} else if op == 0x8A {
 			c.txa()
 		} else if op == 0x90 {
-			c.bcc()
+			c.bcc(addr)
 		} else if op == 0x98 {
 			c.tya()
 		} else if op == 0x9A {
@@ -321,7 +324,7 @@ func (c *CPU) Run() {
 		} else if op == 0xAA {
 			c.tax()
 		} else if op == 0xB0 {
-			c.bcs()
+			c.bcs(addr)
 		} else if op == 0xB8 {
 			c.clv()
 		} else if op == 0xBA {
@@ -339,7 +342,7 @@ func (c *CPU) Run() {
 		} else if op == 0xCA {
 			c.dex()
 		} else if op == 0xD0 {
-			c.bne()
+			c.bne(addr)
 		} else if op == 0xD8 {
 			c.cld()
 		} else if op == 0xE0 || op == 0xE4 || op == 0xEC {
@@ -355,7 +358,7 @@ func (c *CPU) Run() {
 		} else if op == 0x04 || op == 0x0C || op == 0x14 || op == 0x1A || op == 0x1C || op == 0x34 || op == 0x3A || op == 0x3C || op == 0x44 || op == 0x54 || op == 0x5A || op == 0x5C || op == 0x64 || op == 0x74 || op == 0x7A || op == 0x7C || op == 0x80 || op == 0xD4 || op == 0xDA || op == 0xDC || op == 0xEA || op == 0xF4 || op == 0xFA || op == 0xFC {
 			c.nop()
 		} else if op == 0xF0 {
-			c.beq()
+			c.beq(addr)
 		} else if op == 0xF8 {
 			c.sed()
 		} else {
@@ -495,16 +498,13 @@ func (c *CPU) addrIzy() uint16 {
 	return c.read16WrapAround(ref) + uint16(c.Y)
 }
 
-func (c *CPU) addrRel(cond bool) uint16 {
-	if cond {
-		offset := uint16(c.read8(c.PC))
-		// treat offset as signed
-		if offset < 0x80 {
-			return c.PC + 1 + offset
-		}
-		return c.PC + 1 + offset - 0x100
+func (c *CPU) addrRel() uint16 {
+	offset := uint16(c.read8(c.PC))
+	// treat offset as signed
+	if offset < 0x80 {
+		return c.PC + 1 + offset
 	}
-	return c.PC + 1
+	return c.PC + 1 + offset - 0x100
 }
 
 // Stack operations

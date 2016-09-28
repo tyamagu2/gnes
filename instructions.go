@@ -146,43 +146,59 @@ func (c *CPU) bit(addr uint16) {
 // Branch Instructions
 
 // Branch on Plus
-func (c *CPU) bpl() {
-	c.PC = c.addrRel(!c.N)
+func (c *CPU) bpl(addr uint16) {
+	if !c.N {
+		c.PC = addr
+	}
 }
 
 // Branch on Minus
-func (c *CPU) bmi() {
-	c.PC = c.addrRel(c.N)
+func (c *CPU) bmi(addr uint16) {
+	if c.N {
+		c.PC = addr
+	}
 }
 
 // Branch on Overflow Clear
-func (c *CPU) bvc() {
-	c.PC = c.addrRel(!c.V)
+func (c *CPU) bvc(addr uint16) {
+	if !c.V {
+		c.PC = addr
+	}
 }
 
 // Branch on Overflow Set
-func (c *CPU) bvs() {
-	c.PC = c.addrRel(c.V)
+func (c *CPU) bvs(addr uint16) {
+	if c.V {
+		c.PC = addr
+	}
 }
 
 // Branch on Carry Clear
-func (c *CPU) bcc() {
-	c.PC = c.addrRel(!c.C)
+func (c *CPU) bcc(addr uint16) {
+	if !c.C {
+		c.PC = addr
+	}
 }
 
 // Branch on Carry Set
-func (c *CPU) bcs() {
-	c.PC = c.addrRel(c.C)
+func (c *CPU) bcs(addr uint16) {
+	if c.C {
+		c.PC = addr
+	}
 }
 
 // Branch on Equal
-func (c *CPU) beq() {
-	c.PC = c.addrRel(c.Z)
+func (c *CPU) beq(addr uint16) {
+	if c.Z {
+		c.PC = addr
+	}
 }
 
 // Branch on Not Equal
-func (c *CPU) bne() {
-	c.PC = c.addrRel(!c.Z)
+func (c *CPU) bne(addr uint16) {
+	if !c.Z {
+		c.PC = addr
+	}
 }
 
 // Decrement memory
@@ -395,15 +411,6 @@ func (c *CPU) sty(addr uint16) {
 	c.Mem.Write(addr, c.Y)
 }
 
-// Helpers
-
-// Compare the target register value agains the operand value and set flags
-func (c *CPU) compare(r, o uint8) {
-	c.C = r >= o
-	w := r - o
-	c.setZN(w)
-}
-
 // Illegal instructions
 
 // Decrement & Compare
@@ -470,4 +477,13 @@ func (c *CPU) sre(addr uint16) {
 	c.Mem.Write(addr, v)
 	c.A ^= v
 	c.setZN(c.A)
+}
+
+// Helpers
+
+// Compare the target register value agains the operand value and set flags
+func (c *CPU) compare(r, o uint8) {
+	c.C = r >= o
+	w := r - o
+	c.setZN(w)
 }
