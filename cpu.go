@@ -1,5 +1,9 @@
 package gnes
 
+const (
+	stackBase = 0x0100
+)
+
 type CPU struct {
 	Mem *Memory
 	PC  uint16 // Program Counter
@@ -69,4 +73,27 @@ func (c *CPU) read16(addr uint16) uint16 {
 
 func (c *CPU) write8(addr uint16, v uint8) {
 	c.Mem.write(addr, v)
+}
+
+// Stack operations
+
+func (c *CPU) stackPush8(v uint8) {
+	c.write8(stackBase+uint16(c.SP), v)
+	c.SP--
+}
+
+func (c *CPU) stackPush16(v uint16) {
+	c.stackPush8(uint8(v >> 8))
+	c.stackPush8(uint8(v & 0xff))
+}
+
+func (c *CPU) stackPull8() uint8 {
+	c.SP++
+	return c.read8(stackBase + uint16(c.SP))
+}
+
+func (c *CPU) stackPull16() uint16 {
+	lo := c.stackPull8()
+	hi := c.stackPull8()
+	return uint16(hi)<<8 | uint16(lo)
 }
