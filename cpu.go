@@ -58,3 +58,15 @@ func (c *CPU) P() uint8 {
 	}
 	return p
 }
+
+func (c *CPU) read8(addr uint16) uint8 {
+	return c.Mem.read(addr)
+}
+
+func (c *CPU) read16(addr uint16) uint16 {
+	return uint16(c.read8(addr+1))<<8 | uint16(c.read8(addr))
+}
+
+func (c *CPU) write8(addr uint16, v uint8) {
+	c.Mem.write(addr, v)
+}
