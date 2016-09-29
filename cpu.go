@@ -88,6 +88,12 @@ func (c *CPU) read16(addr uint16) uint16 {
 	return uint16(c.read8(addr+1))<<8 | uint16(c.read8(addr))
 }
 
+func (c *CPU) read16WrapAround(addr uint16) uint16 {
+	lo := uint16(c.read8(addr))
+	hi := uint16(c.read8((addr & 0xff00) | (addr+1)&0x00ff))
+	return hi<<8 | lo
+}
+
 func (c *CPU) write8(addr uint16, v uint8) {
 	c.Mem.write(addr, v)
 }
@@ -113,4 +119,70 @@ func (c *CPU) stackPull16() uint16 {
 	lo := c.stackPull8()
 	hi := c.stackPull8()
 	return uint16(hi)<<8 | uint16(lo)
+}
+
+// Addressing Modes
+// http://wiki.nesdev.com/w/index.php/CPU_addressing_modes
+
+// Zero Page
+func (c *CPU) addrZpg() uint16 {
+	return uint16(c.read8(c.PC + 1))
+}
+
+// Indexed Zero Page
+// Wraparound is used in addition so that the address will always be in zero page.
+// http://www.6502.org/tutorials/6502opcodes.html#WRAP
+func (c *CPU) addrZpx() uint16 {
+	return uint16(c.read8(c.PC+1) + c.X)
+}
+
+func (c *CPU) addrZpy() uint16 {
+	return uint16(c.read8(c.PC+1) + c.Y)
+}
+
+// Immediate
+func (c *CPU) addrImm() uint16 {
+	return c.PC + 1
+}
+
+// Absolute
+func (c *CPU) addrAbs() uint16 {
+	return c.read16(c.PC + 1)
+}
+
+// Absolute Indexed
+func (c *CPU) addrAbx() uint16 {
+	return c.read16(c.PC+1) + uint16(c.X)
+}
+
+func (c *CPU) addrAby() uint16 {
+	return c.read16(c.PC+1) + uint16(c.Y)
+}
+
+// Indirect
+func (c *CPU) addrInd() uint16 {
+	ref := c.read16(c.PC + 1)
+	return c.read16WrapAround(ref)
+}
+
+// Indexed Indirect
+func (c *CPU) addrIzx() uint16 {
+	ref := uint16(c.read8(c.PC+1) + c.X)
+	return c.read16WrapAround(ref)
+}
+
+// Indirect Indexed
+func (c *CPU) addrIzy() uint16 {
+	ref := uint16(c.read8(c.PC + 1))
+	return c.read16WrapAround(ref) + uint16(c.Y)
+}
+
+// Relative
+func (c *CPU) addrRel() uint16 {
+	offset := uint16(c.read8(c.PC + 1))
+	// treat offset as signed
+	if offset < 0x80 {
+		return c.PC + 2 + offset
+	}
+	return c.PC + 2 + offset - 0x100
 }
