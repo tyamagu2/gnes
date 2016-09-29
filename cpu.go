@@ -260,11 +260,14 @@ func (c *CPU) Run() {
 
 // http://wiki.nesdev.com/w/index.php/CPU_power_up_state
 func (c *CPU) Reset() {
-	// FIXME
-	//c.PC = c.read16(resetVector)
-	c.PC = 0xC000
+	c.PC = c.read16(resetVector)
 	c.SP = 0xFD
 	c.setProcessorStatus(0x24)
+}
+
+func (c *CPU) RunTest() {
+	c.PC = 0xC000
+	c.Run()
 }
 
 // Processor status flags
@@ -274,7 +277,7 @@ const (
 	flagI uint8 = 1 << iota
 	flagD uint8 = 1 << iota
 	flagB uint8 = 1 << iota
-	flagU uint8 = 1 << iota
+	flag5 uint8 = 1 << iota
 	flagV uint8 = 1 << iota
 	flagN uint8 = 1 << iota
 )
@@ -289,8 +292,7 @@ func (c *CPU) setProcessorStatus(flags uint8) {
 }
 
 func (c *CPU) P() uint8 {
-	p := flagU // always set U
-
+	p := flag5 // always set 5th big
 	if c.C {
 		p |= flagC
 	}
@@ -388,6 +390,8 @@ func (c *CPU) addrIzy() uint16 {
 	ref := uint16(c.read8(c.PC))
 	return c.read16WrapAround(ref) + uint16(c.Y)
 }
+
+// Relative
 
 func (c *CPU) addrRel() uint16 {
 	offset := uint16(c.read8(c.PC))
