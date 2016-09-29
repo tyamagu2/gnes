@@ -245,14 +245,53 @@ func NewCPU(rom *ROM) *CPU {
 	return &cpu
 }
 
-func (c *CPU) Run() {
+func (c *CPU) Step() {
+	c.printState()
+
+	op := c.read8(c.pc)
+
+	var addr uint16
+	pageCrossed := false
+	mode := addrModes[op]
+
+	if mode == zpg {
+		addr, pageCrossed = c.addrZpg()
+	} else if mode == zpx {
+		addr, pageCrossed = c.addrZpx()
+	} else if mode == zpy {
+		addr, pageCrossed = c.addrZpy()
+	} else if mode == abs {
+		addr, pageCrossed = c.addrAbs()
+	} else if mode == abx {
+		addr, pageCrossed = c.addrAbx()
+	} else if mode == aby {
+		addr, pageCrossed = c.addrAby()
+	} else if mode == ind {
+		addr, pageCrossed = c.addrInd()
+	} else if mode == imm {
+		addr, pageCrossed = c.addrImm()
+	} else if mode == rel {
+		addr, pageCrossed = c.addrRel()
+	} else if mode == izx {
+		addr, pageCrossed = c.addrIzx()
+	} else if mode == izy {
+		addr, pageCrossed = c.addrIzy()
+	}
+
+	c.pc += 1 + numOperands[op]
+
+	instructions[op](c, addr, mode)
+
+	c.cycles += cycles[op]
+	if pageCrossed {
+		c.cycles += extraCycles[op]
+	}
+}
+
+func (c *CPU) RunTest() {
+	c.pc = 0xC000
 	for {
 		c.printState()
-
-		// FIXME
-		if c.pc == 0xC66E {
-			return
-		}
 
 		op := c.read8(c.pc)
 
@@ -284,6 +323,10 @@ func (c *CPU) Run() {
 			addr, pageCrossed = c.addrIzy()
 		}
 
+		if c.pc == 0xC66E {
+			return
+		}
+
 		c.pc += 1 + numOperands[op]
 
 		instructions[op](c, addr, mode)
@@ -292,12 +335,8 @@ func (c *CPU) Run() {
 		if pageCrossed {
 			c.cycles += extraCycles[op]
 		}
-	}
-}
 
-func (c *CPU) RunTest() {
-	c.pc = 0xC000
-	c.Run()
+	}
 }
 
 // http://wiki.nesdev.com/w/index.php/CPU_power_up_state
