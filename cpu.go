@@ -1,7 +1,10 @@
 package gnes
 
 const (
-	stackBase = 0x0100
+	stackBase   = 0x0100
+	nmiVector   = 0xFFFA
+	resetVector = 0xFFFC
+	irqVector   = 0xFFFE
 )
 
 type CPU struct {
@@ -17,6 +20,20 @@ type CPU struct {
 	D   bool   // Decimal Mode
 	V   bool   // Overflow Flag
 	N   bool   // Negative Flag
+}
+
+func NewCPU(rom *ROM) *CPU {
+	mem := &Memory{rom: rom}
+	cpu := CPU{Mem: mem}
+	cpu.Reset()
+	return &cpu
+}
+
+// http://wiki.nesdev.com/w/index.php/CPU_power_up_state
+func (c *CPU) Reset() {
+	c.PC = c.read16(resetVector)
+	c.SP = 0xFD
+	c.setProcessorStatus(0x24)
 }
 
 // Processor status flags
