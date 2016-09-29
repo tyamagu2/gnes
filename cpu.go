@@ -1,11 +1,142 @@
 package gnes
 
+import "fmt"
+
 const (
 	stackBase   = 0x0100
 	nmiVector   = 0xFFFA
 	resetVector = 0xFFFC
 	irqVector   = 0xFFFE
 )
+
+type addrMode uint8
+
+// Addressing modes
+const (
+	_   addrMode = iota
+	zpg          // zeroPage
+	zpx          // zeroPageX
+	zpy          // zeroPageY
+	abs          // absolute
+	abx          // absoluteX
+	aby          // absoluteY
+	ind          // indirect
+	imp          // implied
+	acc          // accumulator
+	imm          // immediate
+	rel          // relative
+	izx          // indexedIndirect
+	izy          // indirectIndexed
+)
+
+func (m addrMode) String() string {
+	if m == zpg {
+		return "Zero Page"
+	} else if m == zpx {
+		return "Zero Page X"
+	} else if m == zpy {
+		return "Zero Page Y"
+	} else if m == abs {
+		return "Absolute"
+	} else if m == abx {
+		return "Absolute X"
+	} else if m == aby {
+		return "Absolute Y"
+	} else if m == ind {
+		return "Indirect"
+	} else if m == imp {
+		return "Implied"
+	} else if m == acc {
+		return "Accumulator"
+	} else if m == imm {
+		return "Immediate"
+	} else if m == rel {
+		return "Relative"
+	} else if m == izx {
+		return "Indexed Indirect (Indirect X)"
+	} else if m == izy {
+		return "Indirect Indexed (Indirect Y)"
+	}
+
+	return "Unknown"
+}
+
+// http://www.oxyron.de/html/opcodes02.html
+var mnemonic = [256]string{
+	"BRK", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO", "PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
+	"BPL", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO", "CLC", "ORA", "NOP", "SLO", "NOP", "ORA", "ASL", "SLO",
+	"JSR", "AND", "KIL", "RLA", "BIT", "AND", "ROL", "RLA", "PLP", "AND", "ROL", "ANC", "BIT", "AND", "ROL", "RLA",
+	"BMI", "AND", "KIL", "RLA", "NOP", "AND", "ROL", "RLA", "SEC", "AND", "NOP", "RLA", "NOP", "AND", "ROL", "RLA",
+	"RTI", "EOR", "KIL", "SRE", "NOP", "EOR", "LSR", "SRE", "PHA", "EOR", "LSR", "ALR", "JMP", "EOR", "LSR", "SRE",
+	"BVC", "EOR", "KIL", "SRE", "NOP", "EOR", "LSR", "SRE", "CLI", "EOR", "NOP", "SRE", "NOP", "EOR", "LSR", "SRE",
+	"RTS", "ADC", "KIL", "RRA", "NOP", "ADC", "ROR", "RRA", "PLA", "ADC", "ROR", "ARR", "JMP", "ADC", "ROR", "RRA",
+	"BVS", "ADC", "KIL", "RRA", "NOP", "ADC", "ROR", "RRA", "SEI", "ADC", "NOP", "RRA", "NOP", "ADC", "ROR", "RRA",
+	"NOP", "STA", "NOP", "SAX", "STY", "STA", "STX", "SAX", "DEY", "NOP", "TXA", "XAA", "STY", "STA", "STX", "SAX",
+	"BCC", "STA", "KIL", "AHX", "STY", "STA", "STX", "SAX", "TYA", "STA", "TXS", "TAS", "SHY", "STA", "SHX", "AHX",
+	"LDY", "LDA", "LDX", "LAX", "LDY", "LDA", "LDX", "LAX", "TAY", "LDA", "TAX", "LAX", "LDY", "LDA", "LDX", "LAX",
+	"BCS", "LDA", "KIL", "LAX", "LDY", "LDA", "LDX", "LAX", "CLV", "LDA", "TSX", "LAS", "LDY", "LDA", "LDX", "LAX",
+	"CPY", "CMP", "NOP", "DCP", "CPY", "CMP", "DEC", "DCP", "INY", "CMP", "DEX", "AXS", "CPY", "CMP", "DEC", "DCP",
+	"BNE", "CMP", "KIL", "DCP", "NOP", "CMP", "DEC", "DCP", "CLD", "CMP", "NOP", "DCP", "NOP", "CMP", "DEC", "DCP",
+	"CPX", "SBC", "NOP", "ISC", "CPX", "SBC", "INC", "ISC", "INX", "SBC", "NOP", "SBC", "CPX", "SBC", "INC", "ISC",
+	"BEQ", "SBC", "KIL", "ISC", "NOP", "SBC", "INC", "ISC", "SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC",
+}
+
+var instructions = []func(*CPU, uint16, addrMode){
+	brk, ora, kil, slo, nop, ora, asl, slo, php, ora, asl, anc, nop, ora, asl, slo,
+	bpl, ora, kil, slo, nop, ora, asl, slo, clc, ora, nop, slo, nop, ora, asl, slo,
+	jsr, and, kil, rla, bit, and, rol, rla, plp, and, rol, anc, bit, and, rol, rla,
+	bmi, and, kil, rla, nop, and, rol, rla, sec, and, nop, rla, nop, and, rol, rla,
+	rti, eor, kil, sre, nop, eor, lsr, sre, pha, eor, lsr, alr, jmp, eor, lsr, sre,
+	bvc, eor, kil, sre, nop, eor, lsr, sre, cli, eor, nop, sre, nop, eor, lsr, sre,
+	rts, adc, kil, rra, nop, adc, ror, rra, pla, adc, ror, arr, jmp, adc, ror, rra,
+	bvs, adc, kil, rra, nop, adc, ror, rra, sei, adc, nop, rra, nop, adc, ror, rra,
+	nop, sta, nop, sax, sty, sta, stx, sax, dey, nop, txa, xaa, sty, sta, stx, sax,
+	bcc, sta, kil, ahx, sty, sta, stx, sax, tya, sta, txs, tas, shy, sta, shx, ahx,
+	ldy, lda, ldx, lax, ldy, lda, ldx, lax, tay, lda, tax, lax, ldy, lda, ldx, lax,
+	bcs, lda, kil, lax, ldy, lda, ldx, lax, clv, lda, tsx, las, ldy, lda, ldx, lax,
+	cpy, cmp, nop, dcp, cpy, cmp, dec, dcp, iny, cmp, dex, axs, cpy, cmp, dec, dcp,
+	bne, cmp, kil, dcp, nop, cmp, dec, dcp, cld, cmp, nop, dcp, nop, cmp, dec, dcp,
+	cpx, sbc, nop, isc, cpx, sbc, inc, isc, inx, sbc, nop, sbc, cpx, sbc, inc, isc,
+	beq, sbc, kil, isc, nop, sbc, inc, isc, sed, sbc, nop, isc, nop, sbc, inc, isc,
+}
+
+var addrModes = []addrMode{
+	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, abs, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
+	abs, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, abs, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
+	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, abs, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
+	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, ind, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
+	imm, izx, imm, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpy, zpy, imp, aby, imp, aby, abx, abx, aby, aby,
+	imm, izx, imm, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpy, zpy, imp, aby, imp, aby, abx, abx, aby, aby,
+	imm, izx, imm, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
+	imm, izx, imm, izx, zpg, zpg, zpg, zpg, imp, imm, imp, imm, abs, abs, abs, abs,
+	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
+}
+
+var numOperands = [256]uint16{
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 2, 2, 2, 2,
+	1, 1, 0, 1, 1, 1, 1, 1, 0, 2, 0, 2, 2, 2, 2, 2,
+	2, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 2, 2, 2, 2,
+	1, 1, 0, 1, 1, 1, 1, 1, 0, 2, 0, 2, 2, 2, 2, 2,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 2, 2, 2, 2,
+	1, 1, 0, 1, 1, 1, 1, 1, 0, 2, 0, 2, 2, 2, 2, 2,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 2, 2, 2, 2,
+	1, 1, 0, 1, 1, 1, 1, 1, 0, 2, 0, 2, 2, 2, 2, 2,
+	1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 2, 2, 2, 2,
+	1, 1, 0, 1, 1, 1, 1, 1, 0, 2, 0, 2, 2, 2, 2, 2,
+	1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 2, 2, 2, 2,
+	1, 1, 0, 1, 1, 1, 1, 1, 0, 2, 0, 2, 2, 2, 2, 2,
+	1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 2, 2, 2, 2,
+	1, 1, 0, 1, 1, 1, 1, 1, 0, 2, 0, 2, 2, 2, 2, 2,
+	1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 2, 2, 2, 2,
+	1, 1, 0, 1, 1, 1, 1, 1, 0, 2, 0, 2, 2, 2, 2, 2,
+}
 
 type CPU struct {
 	Mem *Memory
@@ -22,11 +153,104 @@ type CPU struct {
 	N   bool   // Negative Flag
 }
 
+func (c *CPU) printState() {
+	opcode := c.read8(c.PC)
+	operands := c.Mem.readBytes(c.PC+1, uint8(numOperands[opcode]))
+	mode := addrModes[opcode]
+
+	fmt.Printf("%4X %2X", c.PC, opcode)
+	for _, operand := range operands {
+		fmt.Printf(" %2X", operand)
+	}
+	if len(operands) == 0 {
+		fmt.Printf("\t")
+	}
+	fmt.Printf("\t%s", mnemonic[opcode])
+	if mode == zpg {
+		fmt.Printf(" $%02X", operands[0])
+	} else if mode == zpx {
+		fmt.Printf(" $%02X,X", operands[0])
+	} else if mode == zpy {
+		fmt.Printf(" $%02X,Y", operands[0])
+	} else if mode == abs {
+		fmt.Printf(" $%02X%02X", operands[1], operands[0])
+	} else if mode == abx {
+		fmt.Printf(" $%02X%02X,X", operands[1], operands[0])
+	} else if mode == aby {
+		fmt.Printf(" $%02X%02X,Y", operands[1], operands[0])
+	} else if mode == ind {
+		fmt.Printf(" ($%02X%02X)", operands[1], operands[0])
+	} else if mode == imm {
+		fmt.Printf(" #$%02X", operands[0])
+	} else if mode == acc {
+		fmt.Printf(" A")
+	} else if mode == rel {
+		fmt.Printf(" *%02X", int8(operands[0]))
+	} else if mode == izx {
+		fmt.Printf(" ($%02X,X)", operands[0])
+	} else if mode == izy {
+		fmt.Printf(" ($%02X),Y", operands[0])
+	}
+	if mode == zpg || mode == imp || mode == acc || mode == rel {
+		fmt.Printf("\t")
+	}
+	fmt.Printf("\t\t\tA:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:TBD\n", c.A, c.X, c.Y, c.P(), c.SP)
+}
+
 func NewCPU(rom *ROM) *CPU {
 	mem := &Memory{rom: rom}
 	cpu := CPU{Mem: mem}
 	cpu.Reset()
 	return &cpu
+}
+
+func (c *CPU) Run() {
+	for {
+		c.printState()
+
+		// FIXME
+		if c.PC == 0xC66E {
+			return
+		}
+
+		op := c.read8(c.PC)
+
+		var addr uint16
+		mode := addrModes[op]
+
+		if mode == zpg {
+			addr = c.addrZpg()
+		} else if mode == zpx {
+			addr = c.addrZpx()
+		} else if mode == zpy {
+			addr = c.addrZpy()
+		} else if mode == abs {
+			addr = c.addrAbs()
+		} else if mode == abx {
+			addr = c.addrAbx()
+		} else if mode == aby {
+			addr = c.addrAby()
+		} else if mode == ind {
+			addr = c.addrInd()
+		} else if mode == imm {
+			addr = c.addrImm()
+		} else if mode == rel {
+			addr = c.addrRel()
+		} else if mode == izx {
+			addr = c.addrIzx()
+		} else if mode == izy {
+			addr = c.addrIzy()
+		}
+
+		c.PC += 1 + numOperands[op]
+
+		instructions[op](c, addr, mode)
+	}
+}
+
+func (c *CPU) RunTest() {
+	c.PC = 0xC000
+	c.Run()
 }
 
 // http://wiki.nesdev.com/w/index.php/CPU_power_up_state
@@ -78,6 +302,12 @@ func (c *CPU) P() uint8 {
 		p |= flagN
 	}
 	return p
+}
+
+// Given the result of last instruction, sets Z and N flags
+func (c *CPU) setZN(r uint8) {
+	c.Z = r == 0
+	c.N = r >= 0x80
 }
 
 func (c *CPU) read8(addr uint16) uint8 {
