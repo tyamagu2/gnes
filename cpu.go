@@ -139,26 +139,26 @@ var numOperands = [256]uint16{
 }
 
 type CPU struct {
-	Mem *Memory
-	PC  uint16 // Program Counter
-	SP  uint8  // Stack Pointer
-	A   uint8  // Accumulator
-	X   uint8  // Index Register X
-	Y   uint8  // Index Register Y
-	C   bool   // Carry Flag
-	Z   bool   // Zero Flag
-	I   bool   // Interrupt Disable
-	D   bool   // Decimal Mode
-	V   bool   // Overflow Flag
-	N   bool   // Negative Flag
+	mem *Memory
+	pc  uint16 // Program Counter
+	sp  uint8  // Stack Pointer
+	a   uint8  // Accumulator
+	x   uint8  // Index Register X
+	y   uint8  // Index Register Y
+	c   bool   // Carry Flag
+	z   bool   // Zero Flag
+	i   bool   // Interrupt Disable
+	d   bool   // Decimal Mode
+	v   bool   // Overflow Flag
+	n   bool   // Negative Flag
 }
 
 func (c *CPU) printState() {
-	opcode := c.read8(c.PC)
-	operands := c.Mem.readBytes(c.PC+1, uint8(numOperands[opcode]))
+	opcode := c.read8(c.pc)
+	operands := c.mem.readBytes(c.pc+1, uint8(numOperands[opcode]))
 	mode := addrModes[opcode]
 
-	fmt.Printf("%4X %2X", c.PC, opcode)
+	fmt.Printf("%4X %2X", c.pc, opcode)
 	for _, operand := range operands {
 		fmt.Printf(" %2X", operand)
 	}
@@ -194,12 +194,12 @@ func (c *CPU) printState() {
 	if mode == zpg || mode == imp || mode == acc || mode == rel {
 		fmt.Printf("\t")
 	}
-	fmt.Printf("\t\t\tA:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:TBD\n", c.A, c.X, c.Y, c.P(), c.SP)
+	fmt.Printf("\t\t\tA:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:TBD\n", c.a, c.x, c.y, c.p(), c.sp)
 }
 
 func NewCPU(rom *ROM) *CPU {
 	mem := &Memory{rom: rom}
-	cpu := CPU{Mem: mem}
+	cpu := CPU{mem: mem}
 	cpu.Reset()
 	return &cpu
 }
@@ -209,11 +209,11 @@ func (c *CPU) Run() {
 		c.printState()
 
 		// FIXME
-		if c.PC == 0xC66E {
+		if c.pc == 0xC66E {
 			return
 		}
 
-		op := c.read8(c.PC)
+		op := c.read8(c.pc)
 
 		var addr uint16
 		mode := addrModes[op]
@@ -242,21 +242,21 @@ func (c *CPU) Run() {
 			addr = c.addrIzy()
 		}
 
-		c.PC += 1 + numOperands[op]
+		c.pc += 1 + numOperands[op]
 
 		instructions[op](c, addr, mode)
 	}
 }
 
 func (c *CPU) RunTest() {
-	c.PC = 0xC000
+	c.pc = 0xC000
 	c.Run()
 }
 
 // http://wiki.nesdev.com/w/index.php/CPU_power_up_state
 func (c *CPU) Reset() {
-	c.PC = c.read16(resetVector)
-	c.SP = 0xFD
+	c.pc = c.read16(resetVector)
+	c.sp = 0xFD
 	c.setProcessorStatus(0x24)
 }
 
@@ -273,32 +273,32 @@ const (
 )
 
 func (c *CPU) setProcessorStatus(flags uint8) {
-	c.C = flags&flagC != 0
-	c.Z = flags&flagZ != 0
-	c.I = flags&flagI != 0
-	c.D = flags&flagD != 0
-	c.V = flags&flagV != 0
-	c.N = flags&flagN != 0
+	c.c = flags&flagC != 0
+	c.z = flags&flagZ != 0
+	c.i = flags&flagI != 0
+	c.d = flags&flagD != 0
+	c.v = flags&flagV != 0
+	c.n = flags&flagN != 0
 }
 
-func (c *CPU) P() uint8 {
+func (c *CPU) p() uint8 {
 	var p uint8 = flag5 // always set 5th bit
-	if c.C {
+	if c.c {
 		p |= flagC
 	}
-	if c.Z {
+	if c.z {
 		p |= flagZ
 	}
-	if c.I {
+	if c.i {
 		p |= flagI
 	}
-	if c.D {
+	if c.d {
 		p |= flagD
 	}
-	if c.V {
+	if c.v {
 		p |= flagV
 	}
-	if c.N {
+	if c.n {
 		p |= flagN
 	}
 	return p
@@ -306,12 +306,12 @@ func (c *CPU) P() uint8 {
 
 // Given the result of last instruction, sets Z and N flags
 func (c *CPU) setZN(r uint8) {
-	c.Z = r == 0
-	c.N = r >= 0x80
+	c.z = r == 0
+	c.n = r >= 0x80
 }
 
 func (c *CPU) read8(addr uint16) uint8 {
-	return c.Mem.read(addr)
+	return c.mem.read(addr)
 }
 
 func (c *CPU) read16(addr uint16) uint16 {
@@ -325,14 +325,14 @@ func (c *CPU) read16WrapAround(addr uint16) uint16 {
 }
 
 func (c *CPU) write8(addr uint16, v uint8) {
-	c.Mem.write(addr, v)
+	c.mem.write(addr, v)
 }
 
 // Stack operations
 
 func (c *CPU) stackPush8(v uint8) {
-	c.write8(stackBase+uint16(c.SP), v)
-	c.SP--
+	c.write8(stackBase+uint16(c.sp), v)
+	c.sp--
 }
 
 func (c *CPU) stackPush16(v uint16) {
@@ -341,8 +341,8 @@ func (c *CPU) stackPush16(v uint16) {
 }
 
 func (c *CPU) stackPull8() uint8 {
-	c.SP++
-	return c.read8(stackBase + uint16(c.SP))
+	c.sp++
+	return c.read8(stackBase + uint16(c.sp))
 }
 
 func (c *CPU) stackPull16() uint16 {
@@ -356,63 +356,63 @@ func (c *CPU) stackPull16() uint16 {
 
 // Zero Page
 func (c *CPU) addrZpg() uint16 {
-	return uint16(c.read8(c.PC + 1))
+	return uint16(c.read8(c.pc + 1))
 }
 
 // Indexed Zero Page
 // Wraparound is used in addition so that the address will always be in zero page.
 // http://www.6502.org/tutorials/6502opcodes.html#WRAP
 func (c *CPU) addrZpx() uint16 {
-	return uint16(c.read8(c.PC+1) + c.X)
+	return uint16(c.read8(c.pc+1) + c.x)
 }
 
 func (c *CPU) addrZpy() uint16 {
-	return uint16(c.read8(c.PC+1) + c.Y)
+	return uint16(c.read8(c.pc+1) + c.y)
 }
 
 // Immediate
 func (c *CPU) addrImm() uint16 {
-	return c.PC + 1
+	return c.pc + 1
 }
 
 // Absolute
 func (c *CPU) addrAbs() uint16 {
-	return c.read16(c.PC + 1)
+	return c.read16(c.pc + 1)
 }
 
 // Absolute Indexed
 func (c *CPU) addrAbx() uint16 {
-	return c.read16(c.PC+1) + uint16(c.X)
+	return c.read16(c.pc+1) + uint16(c.x)
 }
 
 func (c *CPU) addrAby() uint16 {
-	return c.read16(c.PC+1) + uint16(c.Y)
+	return c.read16(c.pc+1) + uint16(c.y)
 }
 
 // Indirect
 func (c *CPU) addrInd() uint16 {
-	ref := c.read16(c.PC + 1)
+	ref := c.read16(c.pc + 1)
 	return c.read16WrapAround(ref)
 }
 
 // Indexed Indirect
 func (c *CPU) addrIzx() uint16 {
-	ref := uint16(c.read8(c.PC+1) + c.X)
+	ref := uint16(c.read8(c.pc+1) + c.x)
 	return c.read16WrapAround(ref)
 }
 
 // Indirect Indexed
 func (c *CPU) addrIzy() uint16 {
-	ref := uint16(c.read8(c.PC + 1))
-	return c.read16WrapAround(ref) + uint16(c.Y)
+	ref := uint16(c.read8(c.pc + 1))
+	return c.read16WrapAround(ref) + uint16(c.y)
 }
 
 // Relative
 func (c *CPU) addrRel() uint16 {
-	offset := uint16(c.read8(c.PC + 1))
+	offset := uint16(c.read8(c.pc + 1))
 	// treat offset as signed
 	if offset < 0x80 {
-		return c.PC + 2 + offset
+		return c.pc + 2 + offset
 	}
-	return c.PC + 2 + offset - 0x100
+	return c.pc + 2 + offset - 0x100
 }
