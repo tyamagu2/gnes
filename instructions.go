@@ -40,58 +40,42 @@ func bit(c *CPU, addr uint16, _ addrMode) {
 
 // Branch on Plus
 func bpl(c *CPU, addr uint16, _ addrMode) {
-	if !c.n {
-		c.pc = addr
-	}
+	c.branch(!c.n, addr)
 }
 
 // Branch on Minus
 func bmi(c *CPU, addr uint16, _ addrMode) {
-	if c.n {
-		c.pc = addr
-	}
+	c.branch(c.n, addr)
 }
 
 // Branch on Overflow Clear
 func bvc(c *CPU, addr uint16, _ addrMode) {
-	if !c.v {
-		c.pc = addr
-	}
+	c.branch(!c.v, addr)
 }
 
 // Branch on Overflow Set
 func bvs(c *CPU, addr uint16, _ addrMode) {
-	if c.v {
-		c.pc = addr
-	}
+	c.branch(c.v, addr)
 }
 
 // Branch on Carry Clear
 func bcc(c *CPU, addr uint16, _ addrMode) {
-	if !c.c {
-		c.pc = addr
-	}
+	c.branch(!c.c, addr)
 }
 
 // Branch on Carry Set
 func bcs(c *CPU, addr uint16, _ addrMode) {
-	if c.c {
-		c.pc = addr
-	}
+	c.branch(c.c, addr)
 }
 
 // Branch on Not Equal
 func bne(c *CPU, addr uint16, _ addrMode) {
-	if !c.z {
-		c.pc = addr
-	}
+	c.branch(!c.z, addr)
 }
 
 // Branch on Equal
 func beq(c *CPU, addr uint16, _ addrMode) {
-	if c.z {
-		c.pc = addr
-	}
+	c.branch(c.z, addr)
 }
 
 // Break
@@ -478,6 +462,17 @@ func (c *CPU) addWithCarry(m, n uint8, carry bool) {
 	c.v = (m^n)&0x80 == 0 && (m^c.a)&0x80 != 0
 	c.c = v > 0xFF
 	c.setZN(c.a)
+}
+
+func (c *CPU) branch(cond bool, addr uint16) {
+	if cond {
+		if pageCrossed(c.pc, addr) {
+			c.cycles += 2
+		} else {
+			c.cycles++
+		}
+		c.pc = addr
+	}
 }
 
 // Compare the target register value agains the operand value and set flags

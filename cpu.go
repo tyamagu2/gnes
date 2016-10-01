@@ -100,6 +100,46 @@ var instructions = []func(*CPU, uint16, addrMode){
 	beq, sbc, kil, isc, nop, sbc, inc, isc, sed, sbc, nop, isc, nop, sbc, inc, isc,
 }
 
+// Number of clock cycles used by each instruction
+var cycles = []uint64{
+	7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
+	2, 6, 2, 6, 4, 4, 4, 4, 2, 5, 2, 5, 5, 5, 5, 5,
+	2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
+	2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4,
+	2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+}
+
+// Number of extra clock cycles when page boundary crossed
+var extraCycles = []uint64{
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+}
+
 var addrModes = []addrMode{
 	imp, izx, imp, izx, zpg, zpg, zpg, zpg, imp, imm, acc, imm, abs, abs, abs, abs,
 	rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
@@ -139,18 +179,19 @@ var numOperands = [256]uint16{
 }
 
 type CPU struct {
-	mem *Memory
-	pc  uint16 // Program Counter
-	sp  uint8  // Stack Pointer
-	a   uint8  // Accumulator
-	x   uint8  // Index Register X
-	y   uint8  // Index Register Y
-	c   bool   // Carry Flag
-	z   bool   // Zero Flag
-	i   bool   // Interrupt Disable
-	d   bool   // Decimal Mode
-	v   bool   // Overflow Flag
-	n   bool   // Negative Flag
+	mem    *Memory
+	pc     uint16 // Program Counter
+	sp     uint8  // Stack Pointer
+	a      uint8  // Accumulator
+	x      uint8  // Index Register X
+	y      uint8  // Index Register Y
+	c      bool   // Carry Flag
+	z      bool   // Zero Flag
+	i      bool   // Interrupt Disable
+	d      bool   // Decimal Mode
+	v      bool   // Overflow Flag
+	n      bool   // Negative Flag
+	cycles uint64
 }
 
 func (c *CPU) printState() {
@@ -194,7 +235,7 @@ func (c *CPU) printState() {
 	if mode == zpg || mode == imp || mode == acc || mode == rel {
 		fmt.Printf("\t")
 	}
-	fmt.Printf("\t\t\tA:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:TBD\n", c.a, c.x, c.y, c.p(), c.sp)
+	fmt.Printf("\t\t\tA:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%3d\n", c.a, c.x, c.y, c.p(), c.sp, (c.cycles*3)%341)
 }
 
 func NewCPU(rom *ROM) *CPU {
@@ -216,35 +257,41 @@ func (c *CPU) Run() {
 		op := c.read8(c.pc)
 
 		var addr uint16
+		pageCrossed := false
 		mode := addrModes[op]
 
 		if mode == zpg {
-			addr = c.addrZpg()
+			addr, pageCrossed = c.addrZpg()
 		} else if mode == zpx {
-			addr = c.addrZpx()
+			addr, pageCrossed = c.addrZpx()
 		} else if mode == zpy {
-			addr = c.addrZpy()
+			addr, pageCrossed = c.addrZpy()
 		} else if mode == abs {
-			addr = c.addrAbs()
+			addr, pageCrossed = c.addrAbs()
 		} else if mode == abx {
-			addr = c.addrAbx()
+			addr, pageCrossed = c.addrAbx()
 		} else if mode == aby {
-			addr = c.addrAby()
+			addr, pageCrossed = c.addrAby()
 		} else if mode == ind {
-			addr = c.addrInd()
+			addr, pageCrossed = c.addrInd()
 		} else if mode == imm {
-			addr = c.addrImm()
+			addr, pageCrossed = c.addrImm()
 		} else if mode == rel {
-			addr = c.addrRel()
+			addr, pageCrossed = c.addrRel()
 		} else if mode == izx {
-			addr = c.addrIzx()
+			addr, pageCrossed = c.addrIzx()
 		} else if mode == izy {
-			addr = c.addrIzy()
+			addr, pageCrossed = c.addrIzy()
 		}
 
 		c.pc += 1 + numOperands[op]
 
 		instructions[op](c, addr, mode)
+
+		c.cycles += cycles[op]
+		if pageCrossed {
+			c.cycles += extraCycles[op]
+		}
 	}
 }
 
@@ -355,64 +402,75 @@ func (c *CPU) stackPull16() uint16 {
 // http://wiki.nesdev.com/w/index.php/CPU_addressing_modes
 
 // Zero Page
-func (c *CPU) addrZpg() uint16 {
-	return uint16(c.read8(c.pc + 1))
+func (c *CPU) addrZpg() (uint16, bool) {
+	return uint16(c.read8(c.pc + 1)), false
 }
 
 // Indexed Zero Page
 // Wraparound is used in addition so that the address will always be in zero page.
 // http://www.6502.org/tutorials/6502opcodes.html#WRAP
-func (c *CPU) addrZpx() uint16 {
-	return uint16(c.read8(c.pc+1) + c.x)
+
+func (c *CPU) addrZpx() (uint16, bool) {
+	return uint16(c.read8(c.pc+1) + c.x), false
 }
 
-func (c *CPU) addrZpy() uint16 {
-	return uint16(c.read8(c.pc+1) + c.y)
+func (c *CPU) addrZpy() (uint16, bool) {
+	return uint16(c.read8(c.pc+1) + c.y), false
 }
 
 // Immediate
-func (c *CPU) addrImm() uint16 {
-	return c.pc + 1
+func (c *CPU) addrImm() (uint16, bool) {
+	return c.pc + 1, false
 }
 
 // Absolute
-func (c *CPU) addrAbs() uint16 {
-	return c.read16(c.pc + 1)
+func (c *CPU) addrAbs() (uint16, bool) {
+	return c.read16(c.pc + 1), false
 }
 
 // Absolute Indexed
-func (c *CPU) addrAbx() uint16 {
-	return c.read16(c.pc+1) + uint16(c.x)
+func (c *CPU) addrAbx() (uint16, bool) {
+	base := c.read16(c.pc + 1)
+	addr := base + uint16(c.x)
+	return addr, pageCrossed(base, addr)
 }
 
-func (c *CPU) addrAby() uint16 {
-	return c.read16(c.pc+1) + uint16(c.y)
+func (c *CPU) addrAby() (uint16, bool) {
+	base := c.read16(c.pc + 1)
+	addr := base + uint16(c.y)
+	return addr, pageCrossed(base, addr)
 }
 
 // Indirect
-func (c *CPU) addrInd() uint16 {
+func (c *CPU) addrInd() (uint16, bool) {
 	ref := c.read16(c.pc + 1)
-	return c.read16WrapAround(ref)
+	return c.read16WrapAround(ref), false
 }
 
 // Indexed Indirect
-func (c *CPU) addrIzx() uint16 {
+func (c *CPU) addrIzx() (uint16, bool) {
 	ref := uint16(c.read8(c.pc+1) + c.x)
-	return c.read16WrapAround(ref)
+	return c.read16WrapAround(ref), false
 }
 
 // Indirect Indexed
-func (c *CPU) addrIzy() uint16 {
+func (c *CPU) addrIzy() (uint16, bool) {
 	ref := uint16(c.read8(c.pc + 1))
-	return c.read16WrapAround(ref) + uint16(c.y)
+	base := c.read16WrapAround(ref)
+	addr := base + uint16(c.y)
+	return addr, pageCrossed(base, addr)
 }
 
 // Relative
-func (c *CPU) addrRel() uint16 {
+func (c *CPU) addrRel() (uint16, bool) {
 	offset := uint16(c.read8(c.pc + 1))
 	// treat offset as signed
 	if offset < 0x80 {
-		return c.pc + 2 + offset
+		return c.pc + 2 + offset, false
 	}
-	return c.pc + 2 + offset - 0x100
+	return c.pc + 2 + offset - 0x100, false
+}
+
+func pageCrossed(a, b uint16) bool {
+	return a&0xFF00 != b&0xFF00
 }
