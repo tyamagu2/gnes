@@ -12,6 +12,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	cpu := gnes.NewCPU(rom)
+
+	cpu := gnes.NewTestCPU(rom)
 	cpu.RunTest()
 }

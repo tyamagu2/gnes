@@ -9,6 +9,13 @@ const (
 	irqVector   = 0xFFFE
 )
 
+const (
+	none = iota
+	nmi
+	irq
+	reset
+)
+
 type addrMode uint8
 
 // Addressing modes
@@ -179,19 +186,20 @@ var numOperands = [256]uint16{
 }
 
 type CPU struct {
-	mem    *Memory
-	pc     uint16 // Program Counter
-	sp     uint8  // Stack Pointer
-	a      uint8  // Accumulator
-	x      uint8  // Index Register X
-	y      uint8  // Index Register Y
-	c      bool   // Carry Flag
-	z      bool   // Zero Flag
-	i      bool   // Interrupt Disable
-	d      bool   // Decimal Mode
-	v      bool   // Overflow Flag
-	n      bool   // Negative Flag
-	cycles uint64
+	mem       *Memory
+	pc        uint16 // Program Counter
+	sp        uint8  // Stack Pointer
+	a         uint8  // Accumulator
+	x         uint8  // Index Register X
+	y         uint8  // Index Register Y
+	c         bool   // Carry Flag
+	z         bool   // Zero Flag
+	i         bool   // Interrupt Disable
+	d         bool   // Decimal Mode
+	v         bool   // Overflow Flag
+	n         bool   // Negative Flag
+	cycles    uint64
+	interrupt uint8
 }
 
 func (c *CPU) printState() {
@@ -238,14 +246,18 @@ func (c *CPU) printState() {
 	fmt.Printf("\t\t\tA:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%3d\n", c.a, c.x, c.y, c.p(), c.sp, (c.cycles*3)%341)
 }
 
-func NewCPU(rom *ROM) *CPU {
-	mem := &Memory{rom: rom}
+func NewCPU(mem *Memory) *CPU {
 	cpu := CPU{mem: mem}
-	cpu.Reset()
+	cpu.reset()
 	return &cpu
 }
 
-func (c *CPU) Step() {
+func (c *CPU) step() uint64 {
+	if c.interrupt == nmi {
+		c.nmi()
+	}
+	c.interrupt = none
+
 	c.printState()
 
 	op := c.read8(c.pc)
@@ -282,10 +294,19 @@ func (c *CPU) Step() {
 
 	instructions[op](c, addr, mode)
 
+	cyclesWas := c.cycles
 	c.cycles += cycles[op]
 	if pageCrossed {
 		c.cycles += extraCycles[op]
 	}
+	return c.cycles - cyclesWas
+}
+
+func NewTestCPU(rom *ROM) *CPU {
+	mem := &Memory{rom: rom}
+	cpu := CPU{mem: mem}
+	cpu.reset()
+	return &cpu
 }
 
 func (c *CPU) RunTest() {
@@ -340,10 +361,20 @@ func (c *CPU) RunTest() {
 }
 
 // http://wiki.nesdev.com/w/index.php/CPU_power_up_state
-func (c *CPU) Reset() {
+func (c *CPU) reset() {
 	c.pc = c.read16(resetVector)
 	c.sp = 0xFD
 	c.setProcessorStatus(0x24)
+}
+
+func (c *CPU) invokeNMI() {
+	c.interrupt = nmi
+}
+
+func (c *CPU) nmi() {
+	c.stackPush16(c.pc)
+	php(c, 0, 0)
+	c.pc = c.read16(nmiVector)
 }
 
 // Processor status flags

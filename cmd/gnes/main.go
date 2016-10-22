@@ -18,8 +18,8 @@ func main() {
 	fmt.Println("RAM:", rom.NumRAM)
 	fmt.Println("Battery:", rom.Battery)
 
-	cpu := gnes.NewCPU(rom)
+	emu := gnes.NewEmulator(rom)
 	for {
-		cpu.Step()
+		emu.Step()
 	}
 }
