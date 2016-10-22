@@ -28,19 +28,15 @@ func (m *Memory) read(addr uint16) uint8 {
 	} else if addr <= 0x2000 {
 		return m.ram[addr%0x0800]
 	} else if addr <= 0x4000 {
-		return m.ppu.readRegister(0x2000 + (addr-0x2000)%8)
+		return m.ppu.readRegister(addr)
 	}
 
 	return m.ram[addr] // For now
 }
 
 func (m *Memory) write(addr uint16, d uint8) {
-	if addr == 0x2005 {
-		m.ppu.writeScroll(d)
-	} else if addr == 0x2006 {
-		m.ppu.writeAddr(d)
-	} else if addr == 0x2007 {
-		m.ppu.writeData(d)
+	if 0x2000 <= addr && addr < 0x4000 {
+		m.ppu.writeRegister(addr, d)
 	} else {
 		m.ram[addr] = d
 	}
