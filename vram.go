@@ -1,7 +1,5 @@
 package gnes
 
-import "fmt"
-
 const (
 	ADDR_MIRROR_LOW  = 0x4000
 	ADDR_PALETTE_LOW = 0x3F00
@@ -13,7 +11,7 @@ type VRAM struct {
 	palette [0x20]uint8
 }
 
-func (v *VRAM) read8(_addr uint16) uint8 {
+func (v *VRAM) read(_addr uint16) uint8 {
 	addr := _addr % ADDR_MIRROR_LOW
 
 	if addr >= ADDR_PALETTE_LOW {
@@ -36,11 +34,10 @@ func (v *VRAM) paletteAddr(_addr uint16) uint16 {
 }
 
 func (v *VRAM) readPalette(addr uint16) uint8 {
-	fmt.Printf("Read %X from palette %X\n", v.palette[v.paletteAddr(addr)], addr)
 	return v.palette[v.paletteAddr(addr)]
 }
 
-func (v *VRAM) write8(_addr uint16, d uint8) {
+func (v *VRAM) write(_addr uint16, d uint8) {
 	addr := _addr % ADDR_MIRROR_LOW
 	if addr >= ADDR_PALETTE_LOW {
 		v.writePalette(addr, d)
@@ -49,7 +46,10 @@ func (v *VRAM) write8(_addr uint16, d uint8) {
 	}
 }
 
-func (v *VRAM) writePalette(addr uint16, d uint8) {
-	fmt.Printf("Write %X to palette %X\n", d, addr)
-	v.palette[v.paletteAddr(addr)] = d
+func (v *VRAM) writePalette(_addr uint16, d uint8) {
+	addr := v.paletteAddr(_addr)
+	v.palette[addr] = d
+	if addr%4 == 2 {
+		v.palette[addr] &= 0xE3
+	}
 }

@@ -129,7 +129,7 @@ func (p *PPU) readOamData() uint8 {
 
 // Read $2007
 func (p *PPU) readData() uint8 {
-	d := p.vram.read8(p.v)
+	d := p.vram.read(p.v)
 
 	if p.v%0x4000 < 0x3F00 {
 		fmt.Printf("d was 0x%X, readBuffer was 0x%X\n", d, p.readBuffer)
@@ -238,7 +238,7 @@ func (p *PPU) writeAddr(d uint8) {
 
 // Write to $2007
 func (p *PPU) writeData(d uint8) {
-	p.vram.write8(p.v, d)
+	p.vram.write(p.v, d)
 	if p.ctrl&flagCtrlI != 0 {
 		p.v += 32
 	} else {
