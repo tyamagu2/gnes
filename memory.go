@@ -37,7 +37,16 @@ func (m *Memory) read(addr uint16) uint8 {
 func (m *Memory) write(addr uint16, d uint8) {
 	if 0x2000 <= addr && addr < 0x4000 {
 		m.ppu.writeRegister(addr, d)
+	} else if addr == 0x4014 {
+		// OAM DMA
+		m.oamDMA(uint16(d) << 8)
 	} else {
 		m.ram[addr] = d
+	}
+}
+
+func (m *Memory) oamDMA(addr uint16) {
+	for i := uint16(0); i < 256; i++ {
+		m.ppu.writeOamData(m.read(addr + i))
 	}
 }

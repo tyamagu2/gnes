@@ -442,6 +442,15 @@ func (c *CPU) read16WrapAround(addr uint16) uint16 {
 }
 
 func (c *CPU) write8(addr uint16, v uint8) {
+	// TODO: refactor
+	if addr == 0x4014 {
+		// OAM DMA. Suspend CPU
+		if c.cycles%2 == 0 {
+			c.cycles += 513
+		} else {
+			c.cycles += 514
+		}
+	}
 	c.mem.write(addr, v)
 }
 
