@@ -167,7 +167,7 @@ func jmp(c *CPU, addr uint16, _ addrMode) {
 
 // Jump to Subroutine
 func jsr(c *CPU, addr uint16, _ addrMode) {
-	// JSR pushes the address-1 of the next operation on to the stack.
+	// JSR pushes the address-1 of the next operation onto the stack.
 	ret := c.pc - 1
 	c.stackPush16(ret)
 	c.pc = addr
@@ -458,7 +458,7 @@ func (c *CPU) addWithCarry(m, n uint8, carry bool) {
 	}
 
 	c.a = uint8(v & 0xFF)
-	// Set V flag if adding values of the same sign results in the opposite sign value
+	// Set V flag if adding values of the same sign results in an opposite sign value
 	c.v = (m^n)&0x80 == 0 && (m^c.a)&0x80 != 0
 	c.c = v > 0xFF
 	c.setZN(c.a)
@@ -475,7 +475,7 @@ func (c *CPU) branch(cond bool, addr uint16) {
 	}
 }
 
-// Compare the target register value agains the operand value and set flags
+// Compare the target register value against the operand value and set flags
 func (c *CPU) compare(r, o uint8) {
 	c.c = r >= o
 	w := r - o
