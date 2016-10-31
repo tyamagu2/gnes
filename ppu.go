@@ -1,9 +1,6 @@
 package gnes
 
-import (
-	"fmt"
-	"log"
-)
+import "log"
 
 const (
 	cyclesPerSL   = 341
@@ -131,12 +128,15 @@ func (p *PPU) readOamData() uint8 {
 func (p *PPU) readData() uint8 {
 	d := p.vram.read(p.v)
 
-	if p.v%0x4000 < 0x3F00 {
-		fmt.Printf("d was 0x%X, readBuffer was 0x%X\n", d, p.readBuffer)
+	if p.v&0x3FFF < 0x3F00 {
+		// Return the contents of the internal buffer
+		// and update the internal buffer with the byte at the current address
 		d, p.readBuffer = p.readBuffer, d
-		fmt.Printf("d is 0x%X, readBuffer is 0x%X\n", d, p.readBuffer)
 	} else {
-		// FIXME
+		// The palette data is returned immediately.
+		// The read buffer is updated with the name table data
+		// as if $2000 - $2FFF are mirrored to $3000 - $3FFF.
+		p.readBuffer = p.vram.read(p.v & 0x2FFF)
 	}
 
 	if p.ctrl&flagCtrlI != 0 {

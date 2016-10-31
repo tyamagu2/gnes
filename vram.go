@@ -1,7 +1,7 @@
 package gnes
 
 const (
-	ADDR_MIRROR_LOW  = 0x4000
+	ADDR_MIRROR_MASK = 0x3FFF
 	ADDR_PALETTE_LOW = 0x3F00
 )
 
@@ -12,7 +12,7 @@ type VRAM struct {
 }
 
 func (v *VRAM) read(_addr uint16) uint8 {
-	addr := _addr % ADDR_MIRROR_LOW
+	addr := _addr & ADDR_MIRROR_MASK
 
 	if addr >= ADDR_PALETTE_LOW {
 		return v.readPalette(addr)
@@ -38,7 +38,7 @@ func (v *VRAM) readPalette(addr uint16) uint8 {
 }
 
 func (v *VRAM) write(_addr uint16, d uint8) {
-	addr := _addr % ADDR_MIRROR_LOW
+	addr := _addr & ADDR_MIRROR_MASK
 	if addr >= ADDR_PALETTE_LOW {
 		v.writePalette(addr, d)
 	} else {
