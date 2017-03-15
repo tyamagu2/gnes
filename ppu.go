@@ -45,6 +45,12 @@ type PPU struct {
 	oam        [256]uint8 // Object Attribute Memory / Sprite RAM
 	oamAddr    uint8
 
+	// Background variables
+	nameTableByte      uint8
+	attributeTableByte uint8
+	tileBitmapLow      uint8
+	tileBitmapHigh     uint8
+
 	// Registers
 	v uint16 // Current VRAM address
 	t uint16 // Temporary VRAM address
@@ -246,6 +252,24 @@ func (p *PPU) writeData(d uint8) {
 	}
 }
 
+// Tile data fetch functions
+// https://wiki.nesdev.com/w/index.php/PPU_scrolling#Tile_and_attribute_fetching
+
+func (p *PPU) fetchNameTableByte() {
+	addr := 0x2000 | (p.v & 0x0FFF)
+	p.nameTableByte = p.vram.read(addr)
+}
+
+func (p *PPU) fetchAttributeTableByte() {
+}
+
+func (p *PPU) fetchTileBitmapLow() {
+}
+
+func (p *PPU) fetchTileBitmapHigh() {
+}
+
+// https://wiki.nesdev.com/w/index.php/PPU_rendering
 func (p *PPU) step() {
 	p.cycles++
 
@@ -254,6 +278,22 @@ func (p *PPU) step() {
 		p.sl++
 		if p.sl >= slPerFrame {
 			p.sl = 0
+		}
+	}
+
+	if p.sl <= 239 {
+		// Visible scanlines
+		// Cycle 0 is an idle cycle. Each memory access takes 2 cycles to complete.
+		// https://wiki.nesdev.com/w/index.php/PPU_rendering#Cycles_1-256
+		switch p.cycles % 8 {
+		case 1:
+			p.fetchNameTableByte()
+		case 3:
+			p.fetchAttributeTableByte()
+		case 5:
+			p.fetchTileBitmapLow()
+		case 7:
+			p.fetchTileBitmapHigh()
 		}
 	}
 
