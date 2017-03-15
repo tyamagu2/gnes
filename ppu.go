@@ -283,8 +283,8 @@ func (p *PPU) step() {
 
 	if p.sl <= 239 {
 		// Visible scanlines
+		// https://wiki.nesdev.com/w/index.php/PPU_rendering#Visible_scanlines_.280-239.29
 		// Cycle 0 is an idle cycle. Each memory access takes 2 cycles to complete.
-		// https://wiki.nesdev.com/w/index.php/PPU_rendering#Cycles_1-256
 		switch p.cycles % 8 {
 		case 1:
 			p.fetchNameTableByte()
